@@ -17,6 +17,7 @@ import StudyPlanner from "./pages/StudyPlanner";
 import StudyGuide from "./pages/StudyGuide";
 import SavedPlans from "./pages/SavedPlans";
 import Search from "./pages/Search";
+import Settings from "./pages/Settings";
 import NotFound from "./pages/NotFound";
 import { Loader2 } from "lucide-react";
 
@@ -72,6 +73,7 @@ function AppRoutes() {
       <Route path="/pinned" element={<ProtectedRoute><PinnedTopics /></ProtectedRoute>} />
       <Route path="/planner" element={<ProtectedRoute><StudyPlanner /></ProtectedRoute>} />
       <Route path="/saved" element={<ProtectedRoute><SavedPlans /></ProtectedRoute>} />
+      <Route path="/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
       <Route path="*" element={<NotFound />} />
     </Routes>
   );
