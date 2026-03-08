@@ -17,7 +17,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
 import {
   BookOpen, Users, Pin, Upload, Save, X, Pencil, ArrowLeft, FileText, BarChart3, Layers,
-  CheckCircle, AlertCircle, Trash2, Plus, Eye,
+  CheckCircle, AlertCircle, Trash2, Plus, Eye, Mail,
 } from "lucide-react";
 import { Loader2 } from "lucide-react";
 
