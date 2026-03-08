@@ -186,7 +186,7 @@ export default function CourseDetail() {
   return (
     <AppLayout>
       <div className="space-y-6 max-w-3xl mx-auto">
-        <Link to="/" className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-primary">
+        <Link to="/dashboard" className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-primary transition-colors">
           <ArrowLeft className="w-4 h-4" /> Back to courses
         </Link>
 
