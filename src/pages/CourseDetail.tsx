@@ -219,10 +219,7 @@ export default function CourseDetail() {
               const links = Array.isArray(topic.external_links) ? topic.external_links : [];
               return (
                 <Card key={topic.id} className="overflow-hidden">
-                  <CardHeader
-                    className="cursor-pointer hover:bg-muted/50 transition-colors"
-                    onClick={() => setExpandedTopic(expandedTopic === topic.id ? null : topic.id)}
-                  >
+                  <CardHeader>
                     <div className="flex items-start justify-between gap-2">
                       <div className="flex items-start gap-3">
                         <span className="text-sm font-mono text-muted-foreground mt-0.5 shrink-0">
@@ -242,10 +239,7 @@ export default function CourseDetail() {
                         <Button
                           variant="ghost"
                           size="icon"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            handleExplain(topic);
-                          }}
+                          onClick={() => handleExplain(topic)}
                           title="Explain with AI"
                         >
                           <Sparkles className="w-4 h-4 text-amber-500" />
@@ -253,10 +247,7 @@ export default function CourseDetail() {
                         <Button
                           variant="ghost"
                           size="icon"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            togglePin(topic.id);
-                          }}
+                          onClick={() => togglePin(topic.id)}
                         >
                           {isPinned(topic.id) ? (
                             <PinOff className="w-4 h-4 text-primary" />
@@ -267,36 +258,34 @@ export default function CourseDetail() {
                       </div>
                     </div>
                   </CardHeader>
-                  {expandedTopic === topic.id && (
-                    <CardContent className="border-t bg-muted/30">
-                      {topic.content ? (
-                        <p className="text-sm leading-relaxed whitespace-pre-wrap">{topic.content}</p>
-                      ) : (
-                        <p className="text-sm text-muted-foreground italic">No content available for this topic.</p>
-                      )}
-                      {links.length > 0 && (
-                        <div className="mt-4 space-y-2">
-                          <h4 className="text-sm font-semibold">Resources</h4>
-                          {links.map((link: any, i: number) => (
-                            <a
-                              key={i}
-                              href={link.url}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="flex items-center gap-2 text-sm text-primary hover:underline"
-                            >
-                              {link.url?.includes("youtube") ? (
-                                <Youtube className="w-4 h-4" />
-                              ) : (
-                                <ExternalLink className="w-4 h-4" />
-                              )}
-                              {link.title || link.url}
-                            </a>
-                          ))}
-                        </div>
-                      )}
-                    </CardContent>
-                  )}
+                  <CardContent className="border-t bg-muted/30">
+                    {topic.content ? (
+                      <p className="text-sm leading-relaxed whitespace-pre-wrap">{topic.content}</p>
+                    ) : (
+                      <p className="text-sm text-muted-foreground italic">No content available for this topic.</p>
+                    )}
+                    {links.length > 0 && (
+                      <div className="mt-4 space-y-2">
+                        <h4 className="text-sm font-semibold">Resources</h4>
+                        {links.map((link: any, i: number) => (
+                          <a
+                            key={i}
+                            href={link.url}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="flex items-center gap-2 text-sm text-primary hover:underline"
+                          >
+                            {link.url?.includes("youtube") ? (
+                              <Youtube className="w-4 h-4" />
+                            ) : (
+                              <ExternalLink className="w-4 h-4" />
+                            )}
+                            {link.title || link.url}
+                          </a>
+                        ))}
+                      </div>
+                    )}
+                  </CardContent>
                 </Card>
               );
             })
