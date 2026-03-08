@@ -11,3 +11,6 @@ verify_jwt = false
 
 [functions.parse-curriculum]
 verify_jwt = false
+
+[functions.save-curriculum]
+verify_jwt = false
