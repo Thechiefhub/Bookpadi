@@ -206,7 +206,27 @@ export default function CourseDetail() {
         </div>
 
         <div className="space-y-3">
-          <h2 className="text-lg font-semibold">Topics ({topics.length})</h2>
+          <div className="flex items-center justify-between">
+            <h2 className="text-lg font-semibold">Topics ({topics.length})</h2>
+            {topics.length > 0 && (
+              <Button
+                variant="ghost"
+                size="sm"
+                className="gap-1.5 text-muted-foreground"
+                onClick={() => setAllExpanded(!allExpanded)}
+              >
+                {allExpanded ? (
+                  <>
+                    <ChevronsDownUp className="w-4 h-4" /> Collapse All
+                  </>
+                ) : (
+                  <>
+                    <ChevronsUpDown className="w-4 h-4" /> Expand All
+                  </>
+                )}
+              </Button>
+            )}
+          </div>
           {topics.length === 0 ? (
             <Card>
               <CardContent className="py-12 text-center text-muted-foreground">
