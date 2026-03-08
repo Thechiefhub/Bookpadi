@@ -7,6 +7,7 @@ interface Profile {
   user_id: string;
   full_name: string | null;
   department_id: string | null;
+  institution: string | null;
   level: number | null;
   is_admin: boolean;
 }

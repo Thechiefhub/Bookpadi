@@ -80,6 +80,7 @@ export default function Dashboard() {
                 Welcome, {profile?.full_name || "Student"}! 👋
               </h1>
               <p className="opacity-90">
+                {profile?.institution && <>{profile.institution} · </>}
                 {department?.name} · {profile?.level} Level
               </p>
             </div>
