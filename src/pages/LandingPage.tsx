@@ -176,7 +176,7 @@ export default function LandingPage() {
               <Link to="/signup">
                 <Button
                   size="lg"
-                  className="mt-8 bg-white text-foreground hover:bg-white/90 h-12 px-8 text-base gap-2 shadow-elevated"
+                  className="mt-8 bg-foreground text-background hover:bg-foreground/90 h-12 px-8 text-base gap-2 shadow-elevated"
                 >
                   Create free account <ArrowRight className="w-4 h-4" />
                 </Button>
