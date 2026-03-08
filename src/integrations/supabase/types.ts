@@ -235,6 +235,7 @@ export type Database = {
           department_name: string
           email: string
           full_name: string
+          institution: string
           level: number
           user_id: string
         }[]
