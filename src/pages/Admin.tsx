@@ -818,14 +818,41 @@ export default function Admin() {
                           </TableCell>
                           <TableCell>
                             {editingCourseId === course.id ? (
-                              <Input value={editCourseData.title ?? ""} onChange={(e) => setEditCourseData({ ...editCourseData, title: e.target.value })} className="h-8" />
-                            ) : course.title}
+                              <div className="space-y-1.5">
+                                <Input value={editCourseData.title ?? ""} onChange={(e) => setEditCourseData({ ...editCourseData, title: e.target.value })} className="h-8" placeholder="Title" />
+                                <Textarea value={editCourseData.description ?? ""} onChange={(e) => setEditCourseData({ ...editCourseData, description: e.target.value })} className="text-xs min-h-[60px]" placeholder="Description (optional)" rows={2} />
+                              </div>
+                            ) : (
+                              <div>
+                                <span>{course.title}</span>
+                                {course.description && <p className="text-xs text-muted-foreground mt-0.5 line-clamp-1">{course.description}</p>}
+                              </div>
+                            )}
                           </TableCell>
-                          <TableCell className="hidden md:table-cell">{course.level}L</TableCell>
-                          <TableCell className="hidden md:table-cell">{course.semester}</TableCell>
+                          <TableCell className="hidden md:table-cell">
+                            {editingCourseId === course.id ? (
+                              <Select value={String(editCourseData.level ?? 100)} onValueChange={(v) => setEditCourseData({ ...editCourseData, level: Number(v) })}>
+                                <SelectTrigger className="h-8 w-20"><SelectValue /></SelectTrigger>
+                                <SelectContent>
+                                  {[100, 200, 300, 400, 500].map((l) => <SelectItem key={l} value={String(l)}>{l}L</SelectItem>)}
+                                </SelectContent>
+                              </Select>
+                            ) : `${course.level}L`}
+                          </TableCell>
+                          <TableCell className="hidden md:table-cell">
+                            {editingCourseId === course.id ? (
+                              <Select value={String(editCourseData.semester ?? 1)} onValueChange={(v) => setEditCourseData({ ...editCourseData, semester: Number(v) })}>
+                                <SelectTrigger className="h-8 w-20"><SelectValue /></SelectTrigger>
+                                <SelectContent>
+                                  <SelectItem value="1">1st</SelectItem>
+                                  <SelectItem value="2">2nd</SelectItem>
+                                </SelectContent>
+                              </Select>
+                            ) : course.semester}
+                          </TableCell>
                           <TableCell className="hidden sm:table-cell">
                             {editingCourseId === course.id ? (
-                              <Input type="number" value={editCourseData.units ?? 0} onChange={(e) => setEditCourseData({ ...editCourseData, units: Number(e.target.value) })} className="h-8 w-16" />
+                              <Input type="number" value={editCourseData.units ?? 0} onChange={(e) => setEditCourseData({ ...editCourseData, units: Number(e.target.value) })} className="h-8 w-16" min={1} max={6} />
                             ) : course.units}
                           </TableCell>
                           <TableCell className="text-right">
