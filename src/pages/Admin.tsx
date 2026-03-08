@@ -441,12 +441,16 @@ export default function Admin() {
         {/* Analytics Cards */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
           {[
-            { label: "Total Users", value: totalUsers, icon: Users, gradient: "gradient-primary" },
-            { label: "Total Pins", value: totalPins, icon: Pin, gradient: "gradient-secondary" },
-            { label: "Total Courses", value: courses.length, icon: Layers, gradient: "gradient-warm" },
-            { label: "Total Topics", value: topics.length, icon: BarChart3, gradient: "bg-muted", iconClass: "text-muted-foreground" },
+            { label: "Total Users", value: totalUsers, icon: Users, gradient: "gradient-primary", clickable: true },
+            { label: "Total Pins", value: totalPins, icon: Pin, gradient: "gradient-secondary", clickable: false },
+            { label: "Total Courses", value: courses.length, icon: Layers, gradient: "gradient-warm", clickable: false },
+            { label: "Total Topics", value: topics.length, icon: BarChart3, gradient: "bg-muted", iconClass: "text-muted-foreground", clickable: false },
           ].map((card) => (
-            <Card key={card.label} className="shadow-card hover-lift">
+            <Card
+              key={card.label}
+              className={`shadow-card hover-lift ${card.clickable ? "cursor-pointer" : ""}`}
+              onClick={card.clickable ? () => loadUsers() : undefined}
+            >
               <CardContent className="flex items-center gap-4 p-5">
                 <div className={`w-11 h-11 rounded-xl ${card.gradient} flex items-center justify-center`}>
                   <card.icon className={`w-5 h-5 ${card.iconClass ?? "text-primary-foreground"}`} />
@@ -454,6 +458,7 @@ export default function Admin() {
                 <div>
                   <p className="text-sm text-muted-foreground">{card.label}</p>
                   <p className="text-2xl font-bold">{dataLoading ? "…" : card.value}</p>
+                  {card.clickable && <p className="text-[10px] text-muted-foreground">Click to view users</p>}
                 </div>
               </CardContent>
             </Card>
