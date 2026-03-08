@@ -45,7 +45,7 @@ export default function CourseDetail() {
   const [topics, setTopics] = useState<Topic[]>([]);
   const [pins, setPins] = useState<PinRecord[]>([]);
   const [loading, setLoading] = useState(true);
-  const [expandedTopic, setExpandedTopic] = useState<string | null>(null);
+  
 
   // AI Explain state
   const [explainOpen, setExplainOpen] = useState(false);
