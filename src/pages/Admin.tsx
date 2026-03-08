@@ -1025,6 +1025,7 @@ export default function Admin() {
                               {u.email}
                             </span>
                           </TableCell>
+                          <TableCell className="text-sm">{u.institution || <span className="text-muted-foreground italic">Not set</span>}</TableCell>
                           <TableCell>{u.department_name || <span className="text-muted-foreground italic">Not set</span>}</TableCell>
                           <TableCell>{u.level ? <Badge variant="secondary">{u.level}L</Badge> : <span className="text-muted-foreground italic">—</span>}</TableCell>
                           <TableCell className="text-xs text-muted-foreground">{new Date(u.created_at).toLocaleDateString()}</TableCell>
