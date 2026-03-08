@@ -696,7 +696,6 @@ export default function Admin() {
               <TabsTrigger value="topics">Topics ({topics.length})</TabsTrigger>
               <TabsTrigger value="users" onClick={loadUsers}>Users ({totalUsers})</TabsTrigger>
             </TabsList>
-            </TabsList>
             <div className="flex gap-2">
               <Dialog open={showCreateCourse} onOpenChange={setShowCreateCourse}>
                 <DialogTrigger asChild>
