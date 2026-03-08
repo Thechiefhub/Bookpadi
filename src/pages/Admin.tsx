@@ -1004,6 +1004,7 @@ export default function Admin() {
                             <TableHead className="w-12">#</TableHead>
                             <TableHead>Full Name</TableHead>
                             <TableHead>Email</TableHead>
+                            <TableHead>Institution</TableHead>
                             <TableHead>Department</TableHead>
                             <TableHead>Level</TableHead>
                             <TableHead>Joined</TableHead>
@@ -1012,7 +1013,7 @@ export default function Admin() {
                         <TableBody>
                           {filtered.length === 0 ? (
                             <TableRow>
-                              <TableCell colSpan={6} className="text-center py-8 text-muted-foreground">No users match "{userSearch}"</TableCell>
+                              <TableCell colSpan={7} className="text-center py-8 text-muted-foreground">No users match "{userSearch}"</TableCell>
                             </TableRow>
                           ) : filtered.map((u, idx) => (
                         <TableRow key={u.user_id}>
