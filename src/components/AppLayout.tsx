@@ -39,7 +39,7 @@ export default function AppLayout({ children }: { children: ReactNode }) {
           </Link>
 
           <nav className="hidden md:flex items-center gap-0.5">
-            {navItems.map((item) => (
+            {allNavItems.map((item) => (
               <Link key={item.to} to={item.to}>
                 <Button
                   variant={isActive(item.to) ? "secondary" : "ghost"}
