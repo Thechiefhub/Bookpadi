@@ -16,6 +16,7 @@ import CourseDetail from "./pages/CourseDetail";
 import PinnedTopics from "./pages/PinnedTopics";
 import StudyPlanner from "./pages/StudyPlanner";
 import StudyGuide from "./pages/StudyGuide";
+import CourseQuestions from "./pages/CourseQuestions";
 import SavedPlans from "./pages/SavedPlans";
 import Search from "./pages/Search";
 import Settings from "./pages/Settings";
