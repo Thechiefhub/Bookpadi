@@ -2,7 +2,7 @@ import { ReactNode } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
-import { BookOpen, LayoutDashboard, Pin, Calendar, FolderOpen, Search, LogOut, Menu, X, Settings } from "lucide-react";
+import { BookOpen, LayoutDashboard, Pin, Calendar, FolderOpen, Search, LogOut, Menu, X, Settings, Shield } from "lucide-react";
 import { useState } from "react";
 
 const navItems = [
@@ -14,10 +14,14 @@ const navItems = [
   { to: "/settings", label: "Settings", icon: Settings },
 ];
 
+const adminNavItem = { to: "/admin", label: "Admin", icon: Shield };
+
 export default function AppLayout({ children }: { children: ReactNode }) {
   const { profile, signOut } = useAuth();
   const location = useLocation();
   const [mobileOpen, setMobileOpen] = useState(false);
+
+  const allNavItems = profile?.is_admin ? [...navItems, adminNavItem] : navItems;
 
   const isActive = (to: string) => location.pathname === to || (to === "/dashboard" && location.pathname === "/");
 
@@ -35,7 +39,7 @@ export default function AppLayout({ children }: { children: ReactNode }) {
           </Link>
 
           <nav className="hidden md:flex items-center gap-0.5">
-            {navItems.map((item) => (
+            {allNavItems.map((item) => (
               <Link key={item.to} to={item.to}>
                 <Button
                   variant={isActive(item.to) ? "secondary" : "ghost"}
@@ -64,7 +68,7 @@ export default function AppLayout({ children }: { children: ReactNode }) {
 
         {mobileOpen && (
           <div className="md:hidden border-t bg-card/95 backdrop-blur-md p-3 space-y-0.5 animate-fade-in">
-            {navItems.map((item) => (
+            {allNavItems.map((item) => (
               <Link key={item.to} to={item.to} onClick={() => setMobileOpen(false)}>
                 <Button
                   variant={isActive(item.to) ? "secondary" : "ghost"}
