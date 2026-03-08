@@ -20,6 +20,7 @@ interface Department {
 
 export default function Settings() {
   const { user, profile, refreshProfile } = useAuth();
+  const { theme, setTheme } = useTheme();
   const [departments, setDepartments] = useState<Department[]>([]);
   const [fullName, setFullName] = useState("");
   const [selectedDept, setSelectedDept] = useState("");
