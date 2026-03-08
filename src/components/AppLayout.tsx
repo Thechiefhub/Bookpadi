@@ -2,11 +2,12 @@ import { ReactNode } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
-import { BookOpen, LayoutDashboard, Pin, Calendar, FolderOpen, LogOut, Menu, X } from "lucide-react";
+import { BookOpen, LayoutDashboard, Pin, Calendar, FolderOpen, Search, LogOut, Menu, X } from "lucide-react";
 import { useState } from "react";
 
 const navItems = [
   { to: "/", label: "Dashboard", icon: LayoutDashboard },
+  { to: "/search", label: "Search", icon: Search },
   { to: "/pinned", label: "Pinned Topics", icon: Pin },
   { to: "/planner", label: "Study Planner", icon: Calendar },
   { to: "/saved", label: "Saved Plans", icon: FolderOpen },
