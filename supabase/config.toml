@@ -2,3 +2,6 @@ project_id = "lheriwtyqgkodzdgrtit"
 
 [functions.explain-topic]
 verify_jwt = false
+
+[functions.generate-timetable]
+verify_jwt = false
