@@ -146,6 +146,32 @@ export default function Settings() {
           </CardContent>
         </Card>
 
+        <Card>
+          <CardHeader>
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center">
+                {theme === "dark" ? <Moon className="w-5 h-5 text-primary" /> : <Sun className="w-5 h-5 text-primary" />}
+              </div>
+              <div>
+                <CardTitle className="text-lg">Appearance</CardTitle>
+                <CardDescription>Toggle between light and dark mode</CardDescription>
+              </div>
+            </div>
+          </CardHeader>
+          <CardContent>
+            <div className="flex items-center justify-between">
+              <div className="space-y-0.5">
+                <Label>Dark Mode</Label>
+                <p className="text-xs text-muted-foreground">Switch to dark theme</p>
+              </div>
+              <Switch
+                checked={theme === "dark"}
+                onCheckedChange={(checked) => setTheme(checked ? "dark" : "light")}
+              />
+            </div>
+          </CardContent>
+        </Card>
+
         <p className="text-xs text-muted-foreground text-center">{user?.email}</p>
       </div>
     </AppLayout>
