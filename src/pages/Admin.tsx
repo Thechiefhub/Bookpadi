@@ -142,6 +142,16 @@ export default function Admin() {
     setDataLoading(false);
   };
 
+  const loadUsers = async () => {
+    if (usersLoaded) return; // already loaded
+    setUsersLoading(true);
+    const { data, error } = await supabase.rpc("get_registered_users");
+    if (data) setRegisteredUsers(data);
+    if (error) toast({ title: "Error loading users", description: error.message, variant: "destructive" });
+    setUsersLoaded(true);
+    setUsersLoading(false);
+  };
+
   // --- PDF text extraction ---
   const extractTextFromPdf = async (file: File): Promise<string> => {
     const buffer = await file.arrayBuffer();
