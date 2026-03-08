@@ -43,7 +43,7 @@ export default function Settings() {
     if (profile) {
       setFullName(profile.full_name || "");
       setSelectedDept(profile.department_id || "");
-      setSelectedInstitution((profile as any).institution || "");
+      setSelectedInstitution(profile.institution || "");
       setSelectedLevel(profile.level?.toString() || "");
     }
   }, [profile]);
