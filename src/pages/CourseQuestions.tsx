@@ -229,6 +229,53 @@ function ScoreSummary({ correct, total }: { correct: number; total: number }) {
   );
 }
 
+// ── Timer Display ──
+function formatTime(seconds: number): string {
+  const m = Math.floor(seconds / 60);
+  const s = seconds % 60;
+  return `${String(m).padStart(2, "0")}:${String(s).padStart(2, "0")}`;
+}
+
+function TimerBar({ secondsLeft, totalSeconds }: { secondsLeft: number; totalSeconds: number }) {
+  const pct = (secondsLeft / totalSeconds) * 100;
+  const isLow = secondsLeft <= 60;
+  const isCritical = secondsLeft <= 30;
+
+  return (
+    <div className={`sticky top-0 z-20 py-2.5 px-4 rounded-lg border flex items-center gap-3 transition-colors ${
+      isCritical ? "bg-destructive/10 border-destructive/30" : isLow ? "bg-amber-500/10 border-amber-500/30" : "bg-card border-border"
+    }`}>
+      <Timer className={`w-5 h-5 shrink-0 ${isCritical ? "text-destructive animate-pulse" : isLow ? "text-amber-500" : "text-primary"}`} />
+      <div className="flex-1 min-w-0">
+        <div className="h-1.5 rounded-full bg-muted overflow-hidden">
+          <div
+            className={`h-full rounded-full transition-all duration-1000 ${
+              isCritical ? "bg-destructive" : isLow ? "bg-amber-500" : "bg-primary"
+            }`}
+            style={{ width: `${pct}%` }}
+          />
+        </div>
+      </div>
+      <span className={`font-mono text-lg font-bold tabular-nums shrink-0 ${
+        isCritical ? "text-destructive" : isLow ? "text-amber-500" : "text-foreground"
+      }`}>
+        {formatTime(secondsLeft)}
+      </span>
+      {isLow && !isCritical && <AlertTriangle className="w-4 h-4 text-amber-500 shrink-0" />}
+    </div>
+  );
+}
+
+const TIMER_OPTIONS = [
+  { label: "No Timer", value: "0" },
+  { label: "10 minutes", value: "600" },
+  { label: "15 minutes", value: "900" },
+  { label: "20 minutes", value: "1200" },
+  { label: "30 minutes", value: "1800" },
+  { label: "45 minutes", value: "2700" },
+  { label: "1 hour", value: "3600" },
+];
+
 // ── Main Page ──
 export default function CourseQuestions() {
   const { id } = useParams<{ id: string }>();
@@ -247,6 +294,12 @@ export default function CourseQuestions() {
   // Interactive quiz state
   const [selections, setSelections] = useState<Record<number, string>>({});
   const [submitted, setSubmitted] = useState(false);
+
+  // Timer state
+  const [timerDuration, setTimerDuration] = useState(0); // seconds, 0 = no timer
+  const [secondsLeft, setSecondsLeft] = useState(0);
+  const [timerActive, setTimerActive] = useState(false);
+  const autoSubmitRef = useRef(false);
 
   useEffect(() => {
     if (!id) return;
