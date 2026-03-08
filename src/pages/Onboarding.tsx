@@ -44,7 +44,7 @@ export default function Onboarding() {
       toast.error("Failed to save. Please try again.");
     } else {
       await refreshProfile();
-      navigate("/");
+      navigate("/dashboard");
     }
   };
 

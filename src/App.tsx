@@ -4,6 +4,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { AuthProvider, useAuth } from "@/hooks/useAuth";
+import LandingPage from "./pages/LandingPage";
 import Login from "./pages/Login";
 import Signup from "./pages/Signup";
 import ForgotPassword from "./pages/ForgotPassword";
@@ -49,7 +50,7 @@ function PublicRoute({ children }: { children: React.ReactNode }) {
     );
   }
 
-  if (user && profile?.department_id) return <Navigate to="/" />;
+  if (user && profile?.department_id) return <Navigate to="/dashboard" />;
   if (user && profile && !profile.department_id) return <Navigate to="/onboarding" />;
 
   return <>{children}</>;
@@ -58,15 +59,16 @@ function PublicRoute({ children }: { children: React.ReactNode }) {
 function AppRoutes() {
   return (
     <Routes>
+      <Route path="/" element={<PublicRoute><LandingPage /></PublicRoute>} />
       <Route path="/login" element={<PublicRoute><Login /></PublicRoute>} />
       <Route path="/signup" element={<PublicRoute><Signup /></PublicRoute>} />
       <Route path="/forgot-password" element={<ForgotPassword />} />
       <Route path="/reset-password" element={<ResetPassword />} />
       <Route path="/onboarding" element={<ProtectedRoute><Onboarding /></ProtectedRoute>} />
-      <Route path="/" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
-      <Route path="/search" element={<ProtectedRoute><Search /></ProtectedRoute>} />
+      <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
       <Route path="/course/:id" element={<ProtectedRoute><CourseDetail /></ProtectedRoute>} />
       <Route path="/course/:id/guide" element={<ProtectedRoute><StudyGuide /></ProtectedRoute>} />
+      <Route path="/search" element={<ProtectedRoute><Search /></ProtectedRoute>} />
       <Route path="/pinned" element={<ProtectedRoute><PinnedTopics /></ProtectedRoute>} />
       <Route path="/planner" element={<ProtectedRoute><StudyPlanner /></ProtectedRoute>} />
       <Route path="/saved" element={<ProtectedRoute><SavedPlans /></ProtectedRoute>} />
