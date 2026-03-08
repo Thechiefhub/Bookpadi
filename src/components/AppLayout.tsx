@@ -11,6 +11,7 @@ const navItems = [
   { to: "/pinned", label: "Pinned", icon: Pin },
   { to: "/planner", label: "Planner", icon: Calendar },
   { to: "/saved", label: "Saved", icon: FolderOpen },
+  { to: "/settings", label: "Settings", icon: Settings },
 ];
 
 export default function AppLayout({ children }: { children: ReactNode }) {
