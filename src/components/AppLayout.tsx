@@ -68,7 +68,7 @@ export default function AppLayout({ children }: { children: ReactNode }) {
 
         {mobileOpen && (
           <div className="md:hidden border-t bg-card/95 backdrop-blur-md p-3 space-y-0.5 animate-fade-in">
-            {navItems.map((item) => (
+            {allNavItems.map((item) => (
               <Link key={item.to} to={item.to} onClick={() => setMobileOpen(false)}>
                 <Button
                   variant={isActive(item.to) ? "secondary" : "ghost"}
