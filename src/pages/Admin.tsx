@@ -308,7 +308,7 @@ export default function Admin() {
   // --- Inline table editing ---
   const startEditCourse = (course: Course) => {
     setEditingCourseId(course.id);
-    setEditCourseData({ title: course.title, course_code: course.course_code, units: course.units });
+    setEditCourseData({ title: course.title, course_code: course.course_code, units: course.units, level: course.level, semester: course.semester, description: course.description });
   };
   const cancelEditCourse = () => { setEditingCourseId(null); setEditCourseData({}); };
   const saveCourse = async (id: string) => {
@@ -320,7 +320,7 @@ export default function Admin() {
   };
   const startEditTopic = (topic: Topic) => {
     setEditingTopicId(topic.id);
-    setEditTopicData({ title: topic.title, sort_order: topic.sort_order });
+    setEditTopicData({ title: topic.title, sort_order: topic.sort_order, content: topic.content });
   };
   const cancelEditTopic = () => { setEditingTopicId(null); setEditTopicData({}); };
   const saveTopic = async (id: string) => {
@@ -818,14 +818,41 @@ export default function Admin() {
                           </TableCell>
                           <TableCell>
                             {editingCourseId === course.id ? (
-                              <Input value={editCourseData.title ?? ""} onChange={(e) => setEditCourseData({ ...editCourseData, title: e.target.value })} className="h-8" />
-                            ) : course.title}
+                              <div className="space-y-1.5">
+                                <Input value={editCourseData.title ?? ""} onChange={(e) => setEditCourseData({ ...editCourseData, title: e.target.value })} className="h-8" placeholder="Title" />
+                                <Textarea value={editCourseData.description ?? ""} onChange={(e) => setEditCourseData({ ...editCourseData, description: e.target.value })} className="text-xs min-h-[60px]" placeholder="Description (optional)" rows={2} />
+                              </div>
+                            ) : (
+                              <div>
+                                <span>{course.title}</span>
+                                {course.description && <p className="text-xs text-muted-foreground mt-0.5 line-clamp-1">{course.description}</p>}
+                              </div>
+                            )}
                           </TableCell>
-                          <TableCell className="hidden md:table-cell">{course.level}L</TableCell>
-                          <TableCell className="hidden md:table-cell">{course.semester}</TableCell>
+                          <TableCell className="hidden md:table-cell">
+                            {editingCourseId === course.id ? (
+                              <Select value={String(editCourseData.level ?? 100)} onValueChange={(v) => setEditCourseData({ ...editCourseData, level: Number(v) })}>
+                                <SelectTrigger className="h-8 w-20"><SelectValue /></SelectTrigger>
+                                <SelectContent>
+                                  {[100, 200, 300, 400, 500].map((l) => <SelectItem key={l} value={String(l)}>{l}L</SelectItem>)}
+                                </SelectContent>
+                              </Select>
+                            ) : `${course.level}L`}
+                          </TableCell>
+                          <TableCell className="hidden md:table-cell">
+                            {editingCourseId === course.id ? (
+                              <Select value={String(editCourseData.semester ?? 1)} onValueChange={(v) => setEditCourseData({ ...editCourseData, semester: Number(v) })}>
+                                <SelectTrigger className="h-8 w-20"><SelectValue /></SelectTrigger>
+                                <SelectContent>
+                                  <SelectItem value="1">1st</SelectItem>
+                                  <SelectItem value="2">2nd</SelectItem>
+                                </SelectContent>
+                              </Select>
+                            ) : course.semester}
+                          </TableCell>
                           <TableCell className="hidden sm:table-cell">
                             {editingCourseId === course.id ? (
-                              <Input type="number" value={editCourseData.units ?? 0} onChange={(e) => setEditCourseData({ ...editCourseData, units: Number(e.target.value) })} className="h-8 w-16" />
+                              <Input type="number" value={editCourseData.units ?? 0} onChange={(e) => setEditCourseData({ ...editCourseData, units: Number(e.target.value) })} className="h-8 w-16" min={1} max={6} />
                             ) : course.units}
                           </TableCell>
                           <TableCell className="text-right">
@@ -877,8 +904,16 @@ export default function Admin() {
                           </TableCell>
                           <TableCell>
                             {editingTopicId === topic.id ? (
-                              <Input value={editTopicData.title ?? ""} onChange={(e) => setEditTopicData({ ...editTopicData, title: e.target.value })} className="h-8" />
-                            ) : topic.title}
+                              <div className="space-y-1.5">
+                                <Input value={editTopicData.title ?? ""} onChange={(e) => setEditTopicData({ ...editTopicData, title: e.target.value })} className="h-8" placeholder="Title" />
+                                <Textarea value={editTopicData.content ?? ""} onChange={(e) => setEditTopicData({ ...editTopicData, content: e.target.value })} className="text-xs min-h-[60px]" placeholder="Content / description (optional)" rows={2} />
+                              </div>
+                            ) : (
+                              <div>
+                                <span>{topic.title}</span>
+                                {topic.content && <p className="text-xs text-muted-foreground mt-0.5 line-clamp-1">{topic.content}</p>}
+                              </div>
+                            )}
                           </TableCell>
                           <TableCell className="hidden sm:table-cell">
                             <Badge variant="outline" className="text-xs font-mono">{topic.course_code}</Badge>
