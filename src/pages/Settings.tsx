@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
@@ -9,8 +9,12 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
 import { Switch } from "@/components/ui/switch";
-import { Loader2, Save, User, Moon, Sun } from "lucide-react";
+import { Loader2, Save, User, Moon, Sun, ChevronsUpDown, Check, GraduationCap } from "lucide-react";
+import { cn } from "@/lib/utils";
+import { nigerianUniversities } from "@/data/nigerianUniversities";
 
 interface Department {
   id: string;
@@ -24,8 +28,10 @@ export default function Settings() {
   const [departments, setDepartments] = useState<Department[]>([]);
   const [fullName, setFullName] = useState("");
   const [selectedDept, setSelectedDept] = useState("");
+  const [selectedInstitution, setSelectedInstitution] = useState("");
   const [selectedLevel, setSelectedLevel] = useState("");
   const [saving, setSaving] = useState(false);
+  const [institutionOpen, setInstitutionOpen] = useState(false);
 
   useEffect(() => {
     supabase.from("departments").select("*").order("name").then(({ data }) => {
@@ -37,6 +43,7 @@ export default function Settings() {
     if (profile) {
       setFullName(profile.full_name || "");
       setSelectedDept(profile.department_id || "");
+      setSelectedInstitution((profile as any).institution || "");
       setSelectedLevel(profile.level?.toString() || "");
     }
   }, [profile]);
@@ -56,8 +63,9 @@ export default function Settings() {
       .update({
         full_name: fullName.trim(),
         department_id: selectedDept,
+        institution: selectedInstitution || null,
         level: parseInt(selectedLevel),
-      })
+      } as any)
       .eq("user_id", user!.id);
     setSaving(false);
     if (error) {
@@ -70,6 +78,10 @@ export default function Settings() {
 
   const scienceDepts = departments.filter(d => d.faculty === "Sciences");
   const educationDepts = departments.filter(d => d.faculty === "Education");
+
+  const federalUnis = useMemo(() => nigerianUniversities.filter(u => u.type === "federal"), []);
+  const stateUnis = useMemo(() => nigerianUniversities.filter(u => u.type === "state"), []);
+  const privateUnis = useMemo(() => nigerianUniversities.filter(u => u.type === "private"), []);
 
   return (
     <AppLayout>
@@ -87,7 +99,7 @@ export default function Settings() {
               </div>
               <div>
                 <CardTitle className="text-lg">Profile</CardTitle>
-                <CardDescription>Update your name, department and level</CardDescription>
+                <CardDescription>Update your name, institution, department and level</CardDescription>
               </div>
             </div>
           </CardHeader>
@@ -122,6 +134,81 @@ export default function Settings() {
                   )}
                 </SelectContent>
               </Select>
+            </div>
+
+            {/* Institution (searchable combobox) */}
+            <div className="space-y-2">
+              <Label className="flex items-center gap-1.5">
+                <GraduationCap className="w-4 h-4" /> Institution
+              </Label>
+              <Popover open={institutionOpen} onOpenChange={setInstitutionOpen}>
+                <PopoverTrigger asChild>
+                  <Button
+                    variant="outline"
+                    role="combobox"
+                    aria-expanded={institutionOpen}
+                    className="w-full justify-between font-normal h-10"
+                  >
+                    <span className="truncate">
+                      {selectedInstitution || "Select your university…"}
+                    </span>
+                    <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-[var(--radix-popover-trigger-width)] p-0" align="start">
+                  <Command>
+                    <CommandInput placeholder="Search university…" />
+                    <CommandList className="max-h-60">
+                      <CommandEmpty>No university found.</CommandEmpty>
+                      <CommandGroup heading="Federal Universities">
+                        {federalUnis.map((uni) => (
+                          <CommandItem
+                            key={uni.name}
+                            value={uni.name}
+                            onSelect={(val) => {
+                              setSelectedInstitution(val === selectedInstitution ? "" : val);
+                              setInstitutionOpen(false);
+                            }}
+                          >
+                            <Check className={cn("mr-2 h-4 w-4", selectedInstitution === uni.name ? "opacity-100" : "opacity-0")} />
+                            {uni.name}
+                          </CommandItem>
+                        ))}
+                      </CommandGroup>
+                      <CommandGroup heading="State Universities">
+                        {stateUnis.map((uni) => (
+                          <CommandItem
+                            key={uni.name}
+                            value={uni.name}
+                            onSelect={(val) => {
+                              setSelectedInstitution(val === selectedInstitution ? "" : val);
+                              setInstitutionOpen(false);
+                            }}
+                          >
+                            <Check className={cn("mr-2 h-4 w-4", selectedInstitution === uni.name ? "opacity-100" : "opacity-0")} />
+                            {uni.name}
+                          </CommandItem>
+                        ))}
+                      </CommandGroup>
+                      <CommandGroup heading="Private Universities">
+                        {privateUnis.map((uni) => (
+                          <CommandItem
+                            key={uni.name}
+                            value={uni.name}
+                            onSelect={(val) => {
+                              setSelectedInstitution(val === selectedInstitution ? "" : val);
+                              setInstitutionOpen(false);
+                            }}
+                          >
+                            <Check className={cn("mr-2 h-4 w-4", selectedInstitution === uni.name ? "opacity-100" : "opacity-0")} />
+                            {uni.name}
+                          </CommandItem>
+                        ))}
+                      </CommandGroup>
+                    </CommandList>
+                  </Command>
+                </PopoverContent>
+              </Popover>
             </div>
 
             <div className="space-y-2">

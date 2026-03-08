@@ -120,6 +120,7 @@ export type Database = {
           department_id: string | null
           full_name: string | null
           id: string
+          institution: string | null
           is_admin: boolean
           level: number | null
           updated_at: string
@@ -130,6 +131,7 @@ export type Database = {
           department_id?: string | null
           full_name?: string | null
           id?: string
+          institution?: string | null
           is_admin?: boolean
           level?: number | null
           updated_at?: string
@@ -140,6 +142,7 @@ export type Database = {
           department_id?: string | null
           full_name?: string | null
           id?: string
+          institution?: string | null
           is_admin?: boolean
           level?: number | null
           updated_at?: string
@@ -232,6 +235,7 @@ export type Database = {
           department_name: string
           email: string
           full_name: string
+          institution: string
           level: number
           user_id: string
         }[]

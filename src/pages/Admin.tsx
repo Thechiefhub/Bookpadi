@@ -984,6 +984,7 @@ export default function Admin() {
                     ? registeredUsers.filter(u =>
                         (u.full_name || "").toLowerCase().includes(q) ||
                         (u.email || "").toLowerCase().includes(q) ||
+                        (u.institution || "").toLowerCase().includes(q) ||
                         (u.department_name || "").toLowerCase().includes(q)
                       )
                     : registeredUsers;
@@ -1004,6 +1005,7 @@ export default function Admin() {
                             <TableHead className="w-12">#</TableHead>
                             <TableHead>Full Name</TableHead>
                             <TableHead>Email</TableHead>
+                            <TableHead>Institution</TableHead>
                             <TableHead>Department</TableHead>
                             <TableHead>Level</TableHead>
                             <TableHead>Joined</TableHead>
@@ -1012,7 +1014,7 @@ export default function Admin() {
                         <TableBody>
                           {filtered.length === 0 ? (
                             <TableRow>
-                              <TableCell colSpan={6} className="text-center py-8 text-muted-foreground">No users match "{userSearch}"</TableCell>
+                              <TableCell colSpan={7} className="text-center py-8 text-muted-foreground">No users match "{userSearch}"</TableCell>
                             </TableRow>
                           ) : filtered.map((u, idx) => (
                         <TableRow key={u.user_id}>
@@ -1024,6 +1026,7 @@ export default function Admin() {
                               {u.email}
                             </span>
                           </TableCell>
+                          <TableCell className="text-sm">{u.institution || <span className="text-muted-foreground italic">Not set</span>}</TableCell>
                           <TableCell>{u.department_name || <span className="text-muted-foreground italic">Not set</span>}</TableCell>
                           <TableCell>{u.level ? <Badge variant="secondary">{u.level}L</Badge> : <span className="text-muted-foreground italic">—</span>}</TableCell>
                           <TableCell className="text-xs text-muted-foreground">{new Date(u.created_at).toLocaleDateString()}</TableCell>
