@@ -6,7 +6,7 @@ export interface University {
   type: "federal" | "state" | "private";
 }
 
-export const nigerianUniversities: University[] = [
+const _universities = [
   // ── FEDERAL UNIVERSITIES ──
   { name: "Abubakar Tafawa Balewa University, Bauchi", type: "federal" },
   { name: "Ahmadu Bello University, Zaria", type: "federal" },
