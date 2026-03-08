@@ -2,13 +2,15 @@ import { useState, useEffect } from "react";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { useTheme } from "next-themes";
 import AppLayout from "@/components/AppLayout";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Loader2, Save, User } from "lucide-react";
+import { Switch } from "@/components/ui/switch";
+import { Loader2, Save, User, Moon, Sun } from "lucide-react";
 
 interface Department {
   id: string;
@@ -18,6 +20,7 @@ interface Department {
 
 export default function Settings() {
   const { user, profile, refreshProfile } = useAuth();
+  const { theme, setTheme } = useTheme();
   const [departments, setDepartments] = useState<Department[]>([]);
   const [fullName, setFullName] = useState("");
   const [selectedDept, setSelectedDept] = useState("");
@@ -140,6 +143,32 @@ export default function Settings() {
               {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
               Save Changes
             </Button>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center">
+                {theme === "dark" ? <Moon className="w-5 h-5 text-primary" /> : <Sun className="w-5 h-5 text-primary" />}
+              </div>
+              <div>
+                <CardTitle className="text-lg">Appearance</CardTitle>
+                <CardDescription>Toggle between light and dark mode</CardDescription>
+              </div>
+            </div>
+          </CardHeader>
+          <CardContent>
+            <div className="flex items-center justify-between">
+              <div className="space-y-0.5">
+                <Label>Dark Mode</Label>
+                <p className="text-xs text-muted-foreground">Switch to dark theme</p>
+              </div>
+              <Switch
+                checked={theme === "dark"}
+                onCheckedChange={(checked) => setTheme(checked ? "dark" : "light")}
+              />
+            </div>
           </CardContent>
         </Card>
 
