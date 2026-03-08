@@ -382,17 +382,22 @@ export default function Admin() {
     }
   };
 
-  // --- Delete ---
-  const deleteCourse = async (id: string) => {
-    const { error } = await supabase.from("courses").delete().eq("id", id);
-    if (error) toast({ title: "Error", description: error.message, variant: "destructive" });
-    else { toast({ title: "Course deleted" }); fetchData(); }
-  };
+  // --- Delete with confirmation ---
+  const [deleteConfirm, setDeleteConfirm] = useState<{ type: "course" | "topic"; id: string; label: string } | null>(null);
 
-  const deleteTopic = async (id: string) => {
-    const { error } = await supabase.from("topics").delete().eq("id", id);
-    if (error) toast({ title: "Error", description: error.message, variant: "destructive" });
-    else { toast({ title: "Topic deleted" }); fetchData(); }
+  const confirmDelete = async () => {
+    if (!deleteConfirm) return;
+    const { type, id } = deleteConfirm;
+    if (type === "course") {
+      const { error } = await supabase.from("courses").delete().eq("id", id);
+      if (error) toast({ title: "Error", description: error.message, variant: "destructive" });
+      else { toast({ title: "Course deleted" }); fetchData(); }
+    } else {
+      const { error } = await supabase.from("topics").delete().eq("id", id);
+      if (error) toast({ title: "Error", description: error.message, variant: "destructive" });
+      else { toast({ title: "Topic deleted" }); fetchData(); }
+    }
+    setDeleteConfirm(null);
   };
 
   if (loading) {
