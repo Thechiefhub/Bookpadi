@@ -99,7 +99,20 @@ export default function Admin() {
     totalCoursesParsed?: number;
   } | null>(null);
 
-  useEffect(() => {
+  // Create course dialog
+  const [showCreateCourse, setShowCreateCourse] = useState(false);
+  const [newCourse, setNewCourse] = useState({
+    course_code: "", title: "", description: "", level: 100, semester: 1, units: 2, department_id: "",
+  });
+  const [creatingCourse, setCreatingCourse] = useState(false);
+
+  // Create topic dialog
+  const [showCreateTopic, setShowCreateTopic] = useState(false);
+  const [newTopic, setNewTopic] = useState({
+    title: "", content: "", course_id: "", sort_order: 1,
+  });
+  const [creatingTopic, setCreatingTopic] = useState(false);
+
     if (user?.email === ADMIN_EMAIL) fetchData();
   }, [user]);
 
