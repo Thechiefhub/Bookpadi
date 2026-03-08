@@ -330,7 +330,70 @@ export default function Admin() {
     else { toast({ title: "Topic updated" }); cancelEditTopic(); fetchData(); }
   };
 
-  if (loading) {
+  // --- Create course ---
+  const handleCreateCourse = async () => {
+    if (!newCourse.course_code.trim() || !newCourse.title.trim() || !newCourse.department_id) {
+      toast({ title: "Missing fields", description: "Code, title, and department are required.", variant: "destructive" });
+      return;
+    }
+    setCreatingCourse(true);
+    const { error } = await supabase.from("courses").insert({
+      course_code: newCourse.course_code.trim(),
+      title: newCourse.title.trim(),
+      description: newCourse.description.trim() || null,
+      level: newCourse.level,
+      semester: newCourse.semester,
+      units: newCourse.units,
+      department_id: newCourse.department_id,
+    });
+    setCreatingCourse(false);
+    if (error) {
+      toast({ title: "Error creating course", description: error.message, variant: "destructive" });
+    } else {
+      toast({ title: "Course created" });
+      setShowCreateCourse(false);
+      setNewCourse({ course_code: "", title: "", description: "", level: 100, semester: 1, units: 2, department_id: "" });
+      fetchData();
+    }
+  };
+
+  // --- Create topic ---
+  const handleCreateTopic = async () => {
+    if (!newTopic.title.trim() || !newTopic.course_id) {
+      toast({ title: "Missing fields", description: "Title and course are required.", variant: "destructive" });
+      return;
+    }
+    setCreatingTopic(true);
+    const { error } = await supabase.from("topics").insert({
+      title: newTopic.title.trim(),
+      content: newTopic.content.trim() || null,
+      course_id: newTopic.course_id,
+      sort_order: newTopic.sort_order,
+    });
+    setCreatingTopic(false);
+    if (error) {
+      toast({ title: "Error creating topic", description: error.message, variant: "destructive" });
+    } else {
+      toast({ title: "Topic created" });
+      setShowCreateTopic(false);
+      setNewTopic({ title: "", content: "", course_id: "", sort_order: 1 });
+      fetchData();
+    }
+  };
+
+  // --- Delete ---
+  const deleteCourse = async (id: string) => {
+    const { error } = await supabase.from("courses").delete().eq("id", id);
+    if (error) toast({ title: "Error", description: error.message, variant: "destructive" });
+    else { toast({ title: "Course deleted" }); fetchData(); }
+  };
+
+  const deleteTopic = async (id: string) => {
+    const { error } = await supabase.from("topics").delete().eq("id", id);
+    if (error) toast({ title: "Error", description: error.message, variant: "destructive" });
+    else { toast({ title: "Topic deleted" }); fetchData(); }
+  };
+
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
         <Loader2 className="w-8 h-8 animate-spin text-primary" />
