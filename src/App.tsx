@@ -14,6 +14,7 @@ import CourseDetail from "./pages/CourseDetail";
 import PinnedTopics from "./pages/PinnedTopics";
 import StudyPlanner from "./pages/StudyPlanner";
 import StudyGuide from "./pages/StudyGuide";
+import SavedPlans from "./pages/SavedPlans";
 import NotFound from "./pages/NotFound";
 import { Loader2 } from "lucide-react";
 
