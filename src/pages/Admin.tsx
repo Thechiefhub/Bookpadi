@@ -11,6 +11,7 @@ import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
@@ -381,17 +382,22 @@ export default function Admin() {
     }
   };
 
-  // --- Delete ---
-  const deleteCourse = async (id: string) => {
-    const { error } = await supabase.from("courses").delete().eq("id", id);
-    if (error) toast({ title: "Error", description: error.message, variant: "destructive" });
-    else { toast({ title: "Course deleted" }); fetchData(); }
-  };
+  // --- Delete with confirmation ---
+  const [deleteConfirm, setDeleteConfirm] = useState<{ type: "course" | "topic"; id: string; label: string } | null>(null);
 
-  const deleteTopic = async (id: string) => {
-    const { error } = await supabase.from("topics").delete().eq("id", id);
-    if (error) toast({ title: "Error", description: error.message, variant: "destructive" });
-    else { toast({ title: "Topic deleted" }); fetchData(); }
+  const confirmDelete = async () => {
+    if (!deleteConfirm) return;
+    const { type, id } = deleteConfirm;
+    if (type === "course") {
+      const { error } = await supabase.from("courses").delete().eq("id", id);
+      if (error) toast({ title: "Error", description: error.message, variant: "destructive" });
+      else { toast({ title: "Course deleted" }); fetchData(); }
+    } else {
+      const { error } = await supabase.from("topics").delete().eq("id", id);
+      if (error) toast({ title: "Error", description: error.message, variant: "destructive" });
+      else { toast({ title: "Topic deleted" }); fetchData(); }
+    }
+    setDeleteConfirm(null);
   };
 
   if (loading) {
@@ -831,7 +837,7 @@ export default function Admin() {
                             ) : (
                               <div className="flex justify-end gap-1">
                                 <Button size="icon" variant="ghost" className="h-8 w-8" onClick={() => startEditCourse(course)}><Pencil className="w-3.5 h-3.5" /></Button>
-                                <Button size="icon" variant="ghost" className="h-8 w-8 text-destructive hover:text-destructive" onClick={() => deleteCourse(course.id)}><Trash2 className="w-3.5 h-3.5" /></Button>
+                                <Button size="icon" variant="ghost" className="h-8 w-8 text-destructive hover:text-destructive" onClick={() => setDeleteConfirm({ type: "course", id: course.id, label: course.course_code })}><Trash2 className="w-3.5 h-3.5" /></Button>
                               </div>
                             )}
                           </TableCell>
@@ -886,7 +892,7 @@ export default function Admin() {
                             ) : (
                               <div className="flex justify-end gap-1">
                                 <Button size="icon" variant="ghost" className="h-8 w-8" onClick={() => startEditTopic(topic)}><Pencil className="w-3.5 h-3.5" /></Button>
-                                <Button size="icon" variant="ghost" className="h-8 w-8 text-destructive hover:text-destructive" onClick={() => deleteTopic(topic.id)}><Trash2 className="w-3.5 h-3.5" /></Button>
+                                <Button size="icon" variant="ghost" className="h-8 w-8 text-destructive hover:text-destructive" onClick={() => setDeleteConfirm({ type: "topic", id: topic.id, label: topic.title })}><Trash2 className="w-3.5 h-3.5" /></Button>
                               </div>
                             )}
                           </TableCell>
@@ -900,6 +906,25 @@ export default function Admin() {
           </TabsContent>
         </Tabs>
       </main>
+
+      {/* Delete confirmation dialog */}
+      <AlertDialog open={!!deleteConfirm} onOpenChange={(open) => !open && setDeleteConfirm(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete {deleteConfirm?.type}?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This will permanently delete <strong>{deleteConfirm?.label}</strong>
+              {deleteConfirm?.type === "course" && " and all its associated topics"}. This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={confirmDelete} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
