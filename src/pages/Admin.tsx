@@ -81,6 +81,7 @@ export default function Admin() {
   const [registeredUsers, setRegisteredUsers] = useState<any[]>([]);
   const [usersLoading, setUsersLoading] = useState(false);
   const [usersLoaded, setUsersLoaded] = useState(false);
+  const [userSearch, setUserSearch] = useState("");
 
   // Inline editing state
   const [editingCourseId, setEditingCourseId] = useState<string | null>(null);
