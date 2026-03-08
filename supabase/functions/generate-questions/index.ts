@@ -20,12 +20,25 @@ serve(async (req) => {
 
     if (questions) {
       // Answer mode — user is asking for answers to previously generated questions
-      systemPrompt = `You are an expert university tutor providing detailed answers for Nigerian university students. Use markdown formatting with clear headings and explanations.
+      if (mode === "quiz") {
+        systemPrompt = `You are an expert university tutor providing detailed answers for Nigerian university students. Use markdown formatting.
 
-For objective/quiz answers: State the correct option and briefly explain WHY it is correct and why the others are wrong.
-For theory answers: Provide comprehensive, exam-worthy answers that would score full marks. Include definitions, explanations, examples, and relevant points.
+CRITICAL FORMAT: For each question, you MUST start the answer with the correct letter in this EXACT format:
+**Question X: LETTER)**
+Then explain why that answer is correct and why the others are wrong.
+
+Example:
+**Question 1: B)**
+The correct answer is B because... Option A is incorrect because... Option C is incorrect because... Option D is incorrect because...
 
 Be thorough and educational. Help students understand, not just memorise.`;
+      } else {
+        systemPrompt = `You are an expert university tutor providing detailed answers for Nigerian university students. Use markdown formatting with clear headings and explanations.
+
+Provide comprehensive, exam-worthy answers that would score full marks. Include definitions, explanations, examples, and relevant points.
+
+Be thorough and educational. Help students understand, not just memorise.`;
+      }
 
       userPrompt = `Provide detailed answers to these ${mode === "quiz" ? "objective/quiz" : "theory"} questions for:
 
