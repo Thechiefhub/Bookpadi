@@ -984,6 +984,7 @@ export default function Admin() {
                     ? registeredUsers.filter(u =>
                         (u.full_name || "").toLowerCase().includes(q) ||
                         (u.email || "").toLowerCase().includes(q) ||
+                        (u.institution || "").toLowerCase().includes(q) ||
                         (u.department_name || "").toLowerCase().includes(q)
                       )
                     : registeredUsers;
