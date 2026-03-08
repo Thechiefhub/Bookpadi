@@ -278,34 +278,36 @@ export default function CourseDetail() {
                       </div>
                     </div>
                   </CardHeader>
-                  <CardContent className="border-t bg-muted/30">
-                    {topic.content ? (
-                      <p className="text-sm leading-relaxed whitespace-pre-wrap">{topic.content}</p>
-                    ) : (
-                      <p className="text-sm text-muted-foreground italic">No content available for this topic.</p>
-                    )}
-                    {links.length > 0 && (
-                      <div className="mt-4 space-y-2">
-                        <h4 className="text-sm font-semibold">Resources</h4>
-                        {links.map((link: any, i: number) => (
-                          <a
-                            key={i}
-                            href={link.url}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="flex items-center gap-2 text-sm text-primary hover:underline"
-                          >
-                            {link.url?.includes("youtube") ? (
-                              <Youtube className="w-4 h-4" />
-                            ) : (
-                              <ExternalLink className="w-4 h-4" />
-                            )}
-                            {link.title || link.url}
-                          </a>
-                        ))}
-                      </div>
-                    )}
-                  </CardContent>
+                  {allExpanded && (
+                    <CardContent className="border-t bg-muted/30">
+                      {topic.content ? (
+                        <p className="text-sm leading-relaxed whitespace-pre-wrap">{topic.content}</p>
+                      ) : (
+                        <p className="text-sm text-muted-foreground italic">No content available for this topic.</p>
+                      )}
+                      {links.length > 0 && (
+                        <div className="mt-4 space-y-2">
+                          <h4 className="text-sm font-semibold">Resources</h4>
+                          {links.map((link: any, i: number) => (
+                            <a
+                              key={i}
+                              href={link.url}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="flex items-center gap-2 text-sm text-primary hover:underline"
+                            >
+                              {link.url?.includes("youtube") ? (
+                                <Youtube className="w-4 h-4" />
+                              ) : (
+                                <ExternalLink className="w-4 h-4" />
+                              )}
+                              {link.title || link.url}
+                            </a>
+                          ))}
+                        </div>
+                      )}
+                    </CardContent>
+                  )}
                 </Card>
               );
             })
