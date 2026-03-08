@@ -228,7 +228,15 @@ export default function CourseDetail() {
                         <span className="text-sm font-mono text-muted-foreground mt-0.5 shrink-0">
                           {String(idx + 1).padStart(2, "0")}
                         </span>
-                        <CardTitle className="text-base">{topic.title}</CardTitle>
+                        <div className="flex items-center gap-2">
+                          <CardTitle className="text-base">{topic.title}</CardTitle>
+                          {links.length > 0 && (
+                            <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full bg-primary/10 text-primary text-[10px] font-medium shrink-0">
+                              <ExternalLink className="w-3 h-3" />
+                              {links.length}
+                            </span>
+                          )}
+                        </div>
                       </div>
                       <div className="flex items-center gap-1 shrink-0">
                         <Button
