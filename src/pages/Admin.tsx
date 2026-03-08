@@ -77,6 +77,11 @@ export default function Admin() {
   const [totalPins, setTotalPins] = useState<number>(0);
   const [dataLoading, setDataLoading] = useState(true);
 
+  // Users list state
+  const [registeredUsers, setRegisteredUsers] = useState<any[]>([]);
+  const [usersLoading, setUsersLoading] = useState(false);
+  const [usersLoaded, setUsersLoaded] = useState(false);
+
   // Inline editing state
   const [editingCourseId, setEditingCourseId] = useState<string | null>(null);
   const [editingTopicId, setEditingTopicId] = useState<string | null>(null);
