@@ -64,6 +64,7 @@ function AppRoutes() {
       <Route path="/reset-password" element={<ResetPassword />} />
       <Route path="/onboarding" element={<ProtectedRoute><Onboarding /></ProtectedRoute>} />
       <Route path="/" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
+      <Route path="/search" element={<ProtectedRoute><Search /></ProtectedRoute>} />
       <Route path="/course/:id" element={<ProtectedRoute><CourseDetail /></ProtectedRoute>} />
       <Route path="/course/:id/guide" element={<ProtectedRoute><StudyGuide /></ProtectedRoute>} />
       <Route path="/pinned" element={<ProtectedRoute><PinnedTopics /></ProtectedRoute>} />
