@@ -1,13 +1,17 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
 import { Label } from "@/components/ui/label";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { BookOpen, Loader2, GraduationCap } from "lucide-react";
+import { Loader2, GraduationCap, ChevronsUpDown, Check } from "lucide-react";
+import { cn } from "@/lib/utils";
+import { nigerianUniversities } from "@/data/nigerianUniversities";
 
 interface Department {
   id: string;
@@ -18,7 +22,9 @@ interface Department {
 export default function Onboarding() {
   const [departments, setDepartments] = useState<Department[]>([]);
   const [selectedDept, setSelectedDept] = useState("");
+  const [selectedInstitution, setSelectedInstitution] = useState("");
   const [selectedLevel, setSelectedLevel] = useState("");
+  const [institutionOpen, setInstitutionOpen] = useState(false);
   const [loading, setLoading] = useState(false);
   const { user, refreshProfile } = useAuth();
   const navigate = useNavigate();
@@ -29,6 +35,10 @@ export default function Onboarding() {
     });
   }, []);
 
+  const federalUnis = useMemo(() => nigerianUniversities.filter(u => u.type === "federal"), []);
+  const stateUnis = useMemo(() => nigerianUniversities.filter(u => u.type === "state"), []);
+  const privateUnis = useMemo(() => nigerianUniversities.filter(u => u.type === "private"), []);
+
   const handleSubmit = async () => {
     if (!selectedDept || !selectedLevel) {
       toast.error("Please select your department and level");
@@ -37,7 +47,11 @@ export default function Onboarding() {
     setLoading(true);
     const { error } = await supabase
       .from("profiles")
-      .update({ department_id: selectedDept, level: parseInt(selectedLevel) })
+      .update({
+        department_id: selectedDept,
+        institution: selectedInstitution || null,
+        level: parseInt(selectedLevel),
+      } as any)
       .eq("user_id", user!.id);
     setLoading(false);
     if (error) {
@@ -86,6 +100,82 @@ export default function Onboarding() {
               </SelectContent>
             </Select>
           </div>
+
+          {/* Institution */}
+          <div className="space-y-2">
+            <Label className="flex items-center gap-1.5">
+              <GraduationCap className="w-4 h-4" /> Institution
+            </Label>
+            <Popover open={institutionOpen} onOpenChange={setInstitutionOpen}>
+              <PopoverTrigger asChild>
+                <Button
+                  variant="outline"
+                  role="combobox"
+                  aria-expanded={institutionOpen}
+                  className="w-full justify-between font-normal h-10"
+                >
+                  <span className="truncate">
+                    {selectedInstitution || "Select your university…"}
+                  </span>
+                  <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-[var(--radix-popover-trigger-width)] p-0" align="start">
+                <Command>
+                  <CommandInput placeholder="Search university…" />
+                  <CommandList className="max-h-60">
+                    <CommandEmpty>No university found.</CommandEmpty>
+                    <CommandGroup heading="Federal Universities">
+                      {federalUnis.map((uni) => (
+                        <CommandItem
+                          key={uni.name}
+                          value={uni.name}
+                          onSelect={(val) => {
+                            setSelectedInstitution(val === selectedInstitution ? "" : val);
+                            setInstitutionOpen(false);
+                          }}
+                        >
+                          <Check className={cn("mr-2 h-4 w-4", selectedInstitution === uni.name ? "opacity-100" : "opacity-0")} />
+                          {uni.name}
+                        </CommandItem>
+                      ))}
+                    </CommandGroup>
+                    <CommandGroup heading="State Universities">
+                      {stateUnis.map((uni) => (
+                        <CommandItem
+                          key={uni.name}
+                          value={uni.name}
+                          onSelect={(val) => {
+                            setSelectedInstitution(val === selectedInstitution ? "" : val);
+                            setInstitutionOpen(false);
+                          }}
+                        >
+                          <Check className={cn("mr-2 h-4 w-4", selectedInstitution === uni.name ? "opacity-100" : "opacity-0")} />
+                          {uni.name}
+                        </CommandItem>
+                      ))}
+                    </CommandGroup>
+                    <CommandGroup heading="Private Universities">
+                      {privateUnis.map((uni) => (
+                        <CommandItem
+                          key={uni.name}
+                          value={uni.name}
+                          onSelect={(val) => {
+                            setSelectedInstitution(val === selectedInstitution ? "" : val);
+                            setInstitutionOpen(false);
+                          }}
+                        >
+                          <Check className={cn("mr-2 h-4 w-4", selectedInstitution === uni.name ? "opacity-100" : "opacity-0")} />
+                          {uni.name}
+                        </CommandItem>
+                      ))}
+                    </CommandGroup>
+                  </CommandList>
+                </Command>
+              </PopoverContent>
+            </Popover>
+          </div>
+
           <div className="space-y-2">
             <Label>Level</Label>
             <Select value={selectedLevel} onValueChange={setSelectedLevel}>
