@@ -308,7 +308,7 @@ export default function Admin() {
   // --- Inline table editing ---
   const startEditCourse = (course: Course) => {
     setEditingCourseId(course.id);
-    setEditCourseData({ title: course.title, course_code: course.course_code, units: course.units });
+    setEditCourseData({ title: course.title, course_code: course.course_code, units: course.units, level: course.level, semester: course.semester, description: course.description });
   };
   const cancelEditCourse = () => { setEditingCourseId(null); setEditCourseData({}); };
   const saveCourse = async (id: string) => {
@@ -320,7 +320,7 @@ export default function Admin() {
   };
   const startEditTopic = (topic: Topic) => {
     setEditingTopicId(topic.id);
-    setEditTopicData({ title: topic.title, sort_order: topic.sort_order });
+    setEditTopicData({ title: topic.title, sort_order: topic.sort_order, content: topic.content });
   };
   const cancelEditTopic = () => { setEditingTopicId(null); setEditTopicData({}); };
   const saveTopic = async (id: string) => {
