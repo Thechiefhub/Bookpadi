@@ -13,7 +13,7 @@ import {
   DialogTitle,
   DialogDescription,
 } from "@/components/ui/dialog";
-import { Loader2, ArrowLeft, Pin, PinOff, BookOpen, ExternalLink, Youtube, Sparkles, FileText } from "lucide-react";
+import { Loader2, ArrowLeft, Pin, PinOff, BookOpen, ExternalLink, Youtube, Sparkles, FileText, ChevronsDownUp, ChevronsUpDown } from "lucide-react";
 import { toast } from "sonner";
 import ReactMarkdown from "react-markdown";
 
