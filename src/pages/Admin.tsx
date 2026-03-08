@@ -1029,9 +1029,11 @@ export default function Admin() {
                           <TableCell className="text-xs text-muted-foreground">{new Date(u.created_at).toLocaleDateString()}</TableCell>
                         </TableRow>
                       ))}
-                    </TableBody>
-                  </Table>
-                )}
+                        </TableBody>
+                      </Table>
+                    </>
+                  );
+                })()}
               </CardContent>
             </Card>
           </TabsContent>
