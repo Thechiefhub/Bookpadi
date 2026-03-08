@@ -336,6 +336,33 @@ export default function CourseQuestions() {
     return { correct, total: parsedQuestions.length };
   }, [submitted, correctAnswers, parsedQuestions, selections]);
 
+  // Timer countdown effect
+  useEffect(() => {
+    if (!timerActive || secondsLeft <= 0) return;
+    const interval = setInterval(() => {
+      setSecondsLeft((prev) => {
+        if (prev <= 1) {
+          clearInterval(interval);
+          setTimerActive(false);
+          autoSubmitRef.current = true;
+          return 0;
+        }
+        return prev - 1;
+      });
+    }, 1000);
+    return () => clearInterval(interval);
+  }, [timerActive, secondsLeft]);
+
+  // Auto-submit when timer expires
+  useEffect(() => {
+    if (autoSubmitRef.current && !submitted && parsedQuestions.length > 0) {
+      autoSubmitRef.current = false;
+      toast.warning("Time's up! Your quiz has been auto-submitted.");
+      // Trigger submit
+      handleSubmitQuiz();
+    }
+  }, [secondsLeft]); // eslint-disable-line react-hooks/exhaustive-deps
+
   const handleGenerate = useCallback(async (selectedMode: Mode) => {
     if (!course) return;
     setMode(selectedMode);
@@ -343,6 +370,8 @@ export default function CourseQuestions() {
     setAnswersText("");
     setSelections({});
     setSubmitted(false);
+    setTimerActive(false);
+    setSecondsLeft(0);
     setGenerating(true);
 
     try {
@@ -355,12 +384,17 @@ export default function CourseQuestions() {
         },
         (text) => setQuestionsText(text)
       );
+      // Start timer after questions are generated (if quiz mode with timer)
+      if (selectedMode === "quiz" && timerDuration > 0) {
+        setSecondsLeft(timerDuration);
+        setTimerActive(true);
+      }
     } catch (e: any) {
       toast.error(e.message || "Failed to generate questions");
     } finally {
       setGenerating(false);
     }
-  }, [course, topics]);
+  }, [course, topics, timerDuration]);
 
   const handleSubmitQuiz = useCallback(async () => {
     if (!course || !questionsText) return;
