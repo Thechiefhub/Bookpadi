@@ -17,7 +17,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
 import {
   BookOpen, Users, Pin, Upload, Save, X, Pencil, ArrowLeft, FileText, BarChart3, Layers,
-  CheckCircle, AlertCircle, Trash2, Plus, Eye,
+  CheckCircle, AlertCircle, Trash2, Plus, Eye, Mail,
 } from "lucide-react";
 import { Loader2 } from "lucide-react";
 
@@ -77,6 +77,11 @@ export default function Admin() {
   const [totalPins, setTotalPins] = useState<number>(0);
   const [dataLoading, setDataLoading] = useState(true);
 
+  // Users list state
+  const [registeredUsers, setRegisteredUsers] = useState<any[]>([]);
+  const [usersLoading, setUsersLoading] = useState(false);
+  const [usersLoaded, setUsersLoaded] = useState(false);
+
   // Inline editing state
   const [editingCourseId, setEditingCourseId] = useState<string | null>(null);
   const [editingTopicId, setEditingTopicId] = useState<string | null>(null);
@@ -135,6 +140,16 @@ export default function Admin() {
     setTotalUsers(profilesRes.count ?? 0);
     setTotalPins(pinsRes.count ?? 0);
     setDataLoading(false);
+  };
+
+  const loadUsers = async () => {
+    if (usersLoaded) return; // already loaded
+    setUsersLoading(true);
+    const { data, error } = await supabase.rpc("get_registered_users");
+    if (data) setRegisteredUsers(data);
+    if (error) toast({ title: "Error loading users", description: error.message, variant: "destructive" });
+    setUsersLoaded(true);
+    setUsersLoading(false);
   };
 
   // --- PDF text extraction ---
@@ -436,12 +451,16 @@ export default function Admin() {
         {/* Analytics Cards */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
           {[
-            { label: "Total Users", value: totalUsers, icon: Users, gradient: "gradient-primary" },
-            { label: "Total Pins", value: totalPins, icon: Pin, gradient: "gradient-secondary" },
-            { label: "Total Courses", value: courses.length, icon: Layers, gradient: "gradient-warm" },
-            { label: "Total Topics", value: topics.length, icon: BarChart3, gradient: "bg-muted", iconClass: "text-muted-foreground" },
+            { label: "Total Users", value: totalUsers, icon: Users, gradient: "gradient-primary", clickable: true },
+            { label: "Total Pins", value: totalPins, icon: Pin, gradient: "gradient-secondary", clickable: false },
+            { label: "Total Courses", value: courses.length, icon: Layers, gradient: "gradient-warm", clickable: false },
+            { label: "Total Topics", value: topics.length, icon: BarChart3, gradient: "bg-muted", iconClass: "text-muted-foreground", clickable: false },
           ].map((card) => (
-            <Card key={card.label} className="shadow-card hover-lift">
+            <Card
+              key={card.label}
+              className={`shadow-card hover-lift ${card.clickable ? "cursor-pointer" : ""}`}
+              onClick={card.clickable ? () => loadUsers() : undefined}
+            >
               <CardContent className="flex items-center gap-4 p-5">
                 <div className={`w-11 h-11 rounded-xl ${card.gradient} flex items-center justify-center`}>
                   <card.icon className={`w-5 h-5 ${card.iconClass ?? "text-primary-foreground"}`} />
@@ -449,6 +468,7 @@ export default function Admin() {
                 <div>
                   <p className="text-sm text-muted-foreground">{card.label}</p>
                   <p className="text-2xl font-bold">{dataLoading ? "…" : card.value}</p>
+                  {card.clickable && <p className="text-[10px] text-muted-foreground">Click to view users</p>}
                 </div>
               </CardContent>
             </Card>
@@ -674,6 +694,7 @@ export default function Admin() {
             <TabsList>
               <TabsTrigger value="courses">Courses ({courses.length})</TabsTrigger>
               <TabsTrigger value="topics">Topics ({topics.length})</TabsTrigger>
+              <TabsTrigger value="users" onClick={loadUsers}>Users ({totalUsers})</TabsTrigger>
             </TabsList>
             <div className="flex gap-2">
               <Dialog open={showCreateCourse} onOpenChange={setShowCreateCourse}>
@@ -931,6 +952,57 @@ export default function Admin() {
                               </div>
                             )}
                           </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                )}
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          <TabsContent value="users">
+            <Card className="shadow-card">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2 text-lg">
+                  <Users className="w-5 h-5 text-primary" />
+                  Registered Users
+                </CardTitle>
+                <CardDescription>All users who have signed up on the platform.</CardDescription>
+              </CardHeader>
+              <CardContent className="p-0">
+                {usersLoading ? (
+                  <div className="flex items-center justify-center py-12">
+                    <Loader2 className="w-6 h-6 animate-spin text-primary" />
+                  </div>
+                ) : registeredUsers.length === 0 ? (
+                  <div className="text-center py-12 text-muted-foreground">No registered users found.</div>
+                ) : (
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead className="w-12">#</TableHead>
+                        <TableHead>Full Name</TableHead>
+                        <TableHead>Email</TableHead>
+                        <TableHead>Department</TableHead>
+                        <TableHead>Level</TableHead>
+                        <TableHead>Joined</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {registeredUsers.map((u, idx) => (
+                        <TableRow key={u.user_id}>
+                          <TableCell className="font-mono text-xs text-muted-foreground">{idx + 1}</TableCell>
+                          <TableCell className="font-medium">{u.full_name || <span className="text-muted-foreground italic">—</span>}</TableCell>
+                          <TableCell>
+                            <span className="flex items-center gap-1.5 text-sm">
+                              <Mail className="w-3.5 h-3.5 text-muted-foreground" />
+                              {u.email}
+                            </span>
+                          </TableCell>
+                          <TableCell>{u.department_name || <span className="text-muted-foreground italic">Not set</span>}</TableCell>
+                          <TableCell>{u.level ? <Badge variant="secondary">{u.level}L</Badge> : <span className="text-muted-foreground italic">—</span>}</TableCell>
+                          <TableCell className="text-xs text-muted-foreground">{new Date(u.created_at).toLocaleDateString()}</TableCell>
                         </TableRow>
                       ))}
                     </TableBody>
