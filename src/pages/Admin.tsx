@@ -978,20 +978,43 @@ export default function Admin() {
                   </div>
                 ) : registeredUsers.length === 0 ? (
                   <div className="text-center py-12 text-muted-foreground">No registered users found.</div>
-                ) : (
-                  <Table>
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead className="w-12">#</TableHead>
-                        <TableHead>Full Name</TableHead>
-                        <TableHead>Email</TableHead>
-                        <TableHead>Department</TableHead>
-                        <TableHead>Level</TableHead>
-                        <TableHead>Joined</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {registeredUsers.map((u, idx) => (
+                ) : (() => {
+                  const q = userSearch.toLowerCase().trim();
+                  const filtered = q
+                    ? registeredUsers.filter(u =>
+                        (u.full_name || "").toLowerCase().includes(q) ||
+                        (u.email || "").toLowerCase().includes(q) ||
+                        (u.department_name || "").toLowerCase().includes(q)
+                      )
+                    : registeredUsers;
+                  return (
+                    <>
+                      <div className="p-4 pb-2">
+                        <Input
+                          placeholder="Search by name, email, or department…"
+                          value={userSearch}
+                          onChange={(e) => setUserSearch(e.target.value)}
+                          className="max-w-sm"
+                        />
+                        <p className="text-xs text-muted-foreground mt-1.5">{filtered.length} of {registeredUsers.length} users</p>
+                      </div>
+                      <Table>
+                        <TableHeader>
+                          <TableRow>
+                            <TableHead className="w-12">#</TableHead>
+                            <TableHead>Full Name</TableHead>
+                            <TableHead>Email</TableHead>
+                            <TableHead>Department</TableHead>
+                            <TableHead>Level</TableHead>
+                            <TableHead>Joined</TableHead>
+                          </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                          {filtered.length === 0 ? (
+                            <TableRow>
+                              <TableCell colSpan={6} className="text-center py-8 text-muted-foreground">No users match "{userSearch}"</TableCell>
+                            </TableRow>
+                          ) : filtered.map((u, idx) => (
                         <TableRow key={u.user_id}>
                           <TableCell className="font-mono text-xs text-muted-foreground">{idx + 1}</TableCell>
                           <TableCell className="font-medium">{u.full_name || <span className="text-muted-foreground italic">—</span>}</TableCell>
