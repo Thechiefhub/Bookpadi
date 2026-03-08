@@ -892,7 +892,7 @@ export default function Admin() {
                             ) : (
                               <div className="flex justify-end gap-1">
                                 <Button size="icon" variant="ghost" className="h-8 w-8" onClick={() => startEditTopic(topic)}><Pencil className="w-3.5 h-3.5" /></Button>
-                                <Button size="icon" variant="ghost" className="h-8 w-8 text-destructive hover:text-destructive" onClick={() => deleteTopic(topic.id)}><Trash2 className="w-3.5 h-3.5" /></Button>
+                                <Button size="icon" variant="ghost" className="h-8 w-8 text-destructive hover:text-destructive" onClick={() => setDeleteConfirm({ type: "topic", id: topic.id, label: topic.title })}><Trash2 className="w-3.5 h-3.5" /></Button>
                               </div>
                             )}
                           </TableCell>
