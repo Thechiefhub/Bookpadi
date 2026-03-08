@@ -67,6 +67,7 @@ function AppRoutes() {
       <Route path="/course/:id/guide" element={<ProtectedRoute><StudyGuide /></ProtectedRoute>} />
       <Route path="/pinned" element={<ProtectedRoute><PinnedTopics /></ProtectedRoute>} />
       <Route path="/planner" element={<ProtectedRoute><StudyPlanner /></ProtectedRoute>} />
+      <Route path="/saved" element={<ProtectedRoute><SavedPlans /></ProtectedRoute>} />
       <Route path="*" element={<NotFound />} />
     </Routes>
   );
