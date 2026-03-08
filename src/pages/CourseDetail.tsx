@@ -13,7 +13,7 @@ import {
   DialogTitle,
   DialogDescription,
 } from "@/components/ui/dialog";
-import { Loader2, ArrowLeft, Pin, PinOff, BookOpen, ExternalLink, Youtube, Sparkles } from "lucide-react";
+import { Loader2, ArrowLeft, Pin, PinOff, BookOpen, ExternalLink, Youtube, Sparkles, FileText } from "lucide-react";
 import { toast } from "sonner";
 import ReactMarkdown from "react-markdown";
 
@@ -190,12 +190,19 @@ export default function CourseDetail() {
           <ArrowLeft className="w-4 h-4" /> Back to courses
         </Link>
 
-        <div>
-          <Badge variant="secondary" className="font-mono mb-2">{course.course_code}</Badge>
-          <h1 className="text-2xl md:text-3xl font-bold">{course.title}</h1>
-          {course.description && (
-            <p className="mt-2 text-muted-foreground leading-relaxed">{course.description}</p>
-          )}
+        <div className="flex items-start justify-between flex-wrap gap-3">
+          <div>
+            <Badge variant="secondary" className="font-mono mb-2">{course.course_code}</Badge>
+            <h1 className="text-2xl md:text-3xl font-bold">{course.title}</h1>
+            {course.description && (
+              <p className="mt-2 text-muted-foreground leading-relaxed">{course.description}</p>
+            )}
+          </div>
+          <Link to={`/course/${id}/guide`}>
+            <Button variant="outline" size="sm" className="gap-1.5">
+              <FileText className="w-4 h-4" /> Study Guide
+            </Button>
+          </Link>
         </div>
 
         <div className="space-y-3">
