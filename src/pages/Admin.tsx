@@ -113,6 +113,7 @@ export default function Admin() {
   });
   const [creatingTopic, setCreatingTopic] = useState(false);
 
+  useEffect(() => {
     if (user?.email === ADMIN_EMAIL) fetchData();
   }, [user]);
 
