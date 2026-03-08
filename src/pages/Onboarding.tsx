@@ -48,8 +48,7 @@ export default function Onboarding() {
     }
   };
 
-  const scienceDepts = departments.filter(d => d.faculty === "Sciences");
-  const educationDepts = departments.filter(d => d.faculty === "Education");
+  const faculties = [...new Set(departments.map(d => d.faculty))].sort();
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-background p-4">
@@ -73,22 +72,17 @@ export default function Onboarding() {
                 <SelectValue placeholder="Select your department" />
               </SelectTrigger>
               <SelectContent className="max-h-60">
-                {scienceDepts.length > 0 && (
-                  <>
-                    <div className="px-2 py-1.5 text-xs font-semibold text-muted-foreground">Sciences</div>
-                    {scienceDepts.map((d) => (
-                      <SelectItem key={d.id} value={d.id}>{d.name}</SelectItem>
-                    ))}
-                  </>
-                )}
-                {educationDepts.length > 0 && (
-                  <>
-                    <div className="px-2 py-1.5 text-xs font-semibold text-muted-foreground">Education</div>
-                    {educationDepts.map((d) => (
-                      <SelectItem key={d.id} value={d.id}>{d.name}</SelectItem>
-                    ))}
-                  </>
-                )}
+                {faculties.map((faculty) => {
+                  const depts = departments.filter(d => d.faculty === faculty);
+                  return depts.length > 0 ? (
+                    <div key={faculty}>
+                      <div className="px-2 py-1.5 text-xs font-semibold text-muted-foreground">{faculty}</div>
+                      {depts.map((d) => (
+                        <SelectItem key={d.id} value={d.id}>{d.name}</SelectItem>
+                      ))}
+                    </div>
+                  ) : null;
+                })}
               </SelectContent>
             </Select>
           </div>
