@@ -21,6 +21,8 @@ export default function AppLayout({ children }: { children: ReactNode }) {
   const location = useLocation();
   const [mobileOpen, setMobileOpen] = useState(false);
 
+  const allNavItems = profile?.is_admin ? [...navItems, adminNavItem] : navItems;
+
   const isActive = (to: string) => location.pathname === to || (to === "/dashboard" && location.pathname === "/");
 
   return (
