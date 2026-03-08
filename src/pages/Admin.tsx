@@ -664,10 +664,124 @@ export default function Admin() {
 
         {/* Data Tables */}
         <Tabs defaultValue="courses">
-          <TabsList>
-            <TabsTrigger value="courses">Courses ({courses.length})</TabsTrigger>
-            <TabsTrigger value="topics">Topics ({topics.length})</TabsTrigger>
-          </TabsList>
+          <div className="flex items-center justify-between mb-2">
+            <TabsList>
+              <TabsTrigger value="courses">Courses ({courses.length})</TabsTrigger>
+              <TabsTrigger value="topics">Topics ({topics.length})</TabsTrigger>
+            </TabsList>
+            <div className="flex gap-2">
+              <Dialog open={showCreateCourse} onOpenChange={setShowCreateCourse}>
+                <DialogTrigger asChild>
+                  <Button size="sm" variant="outline"><Plus className="w-3.5 h-3.5 mr-1" /> New Course</Button>
+                </DialogTrigger>
+                <DialogContent>
+                  <DialogHeader>
+                    <DialogTitle>Create Course</DialogTitle>
+                    <DialogDescription>Add a new course manually.</DialogDescription>
+                  </DialogHeader>
+                  <div className="space-y-3">
+                    <div>
+                      <Label className="text-xs">Department</Label>
+                      <Select value={newCourse.department_id} onValueChange={(v) => setNewCourse({ ...newCourse, department_id: v })}>
+                        <SelectTrigger className="mt-1"><SelectValue placeholder="Select…" /></SelectTrigger>
+                        <SelectContent>
+                          {departments.map((d) => <SelectItem key={d.id} value={d.id}>{d.name}</SelectItem>)}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div className="grid grid-cols-2 gap-3">
+                      <div>
+                        <Label className="text-xs">Course Code</Label>
+                        <Input value={newCourse.course_code} onChange={(e) => setNewCourse({ ...newCourse, course_code: e.target.value })} placeholder="CSC 101" className="mt-1" maxLength={20} />
+                      </div>
+                      <div>
+                        <Label className="text-xs">Units</Label>
+                        <Input type="number" value={newCourse.units} onChange={(e) => setNewCourse({ ...newCourse, units: Number(e.target.value) })} className="mt-1" min={1} max={6} />
+                      </div>
+                    </div>
+                    <div>
+                      <Label className="text-xs">Title</Label>
+                      <Input value={newCourse.title} onChange={(e) => setNewCourse({ ...newCourse, title: e.target.value })} placeholder="Introduction to Computer Science" className="mt-1" maxLength={200} />
+                    </div>
+                    <div>
+                      <Label className="text-xs">Description (optional)</Label>
+                      <Textarea value={newCourse.description} onChange={(e) => setNewCourse({ ...newCourse, description: e.target.value })} placeholder="Brief description…" className="mt-1" rows={2} maxLength={500} />
+                    </div>
+                    <div className="grid grid-cols-2 gap-3">
+                      <div>
+                        <Label className="text-xs">Level</Label>
+                        <Select value={String(newCourse.level)} onValueChange={(v) => setNewCourse({ ...newCourse, level: Number(v) })}>
+                          <SelectTrigger className="mt-1"><SelectValue /></SelectTrigger>
+                          <SelectContent>
+                            {[100, 200, 300, 400, 500].map((l) => <SelectItem key={l} value={String(l)}>{l}L</SelectItem>)}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      <div>
+                        <Label className="text-xs">Semester</Label>
+                        <Select value={String(newCourse.semester)} onValueChange={(v) => setNewCourse({ ...newCourse, semester: Number(v) })}>
+                          <SelectTrigger className="mt-1"><SelectValue /></SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="1">1st</SelectItem>
+                            <SelectItem value="2">2nd</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    </div>
+                  </div>
+                  <DialogFooter>
+                    <Button variant="outline" onClick={() => setShowCreateCourse(false)}>Cancel</Button>
+                    <Button onClick={handleCreateCourse} disabled={creatingCourse}>
+                      {creatingCourse ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Plus className="w-4 h-4 mr-2" />}
+                      Create
+                    </Button>
+                  </DialogFooter>
+                </DialogContent>
+              </Dialog>
+
+              <Dialog open={showCreateTopic} onOpenChange={setShowCreateTopic}>
+                <DialogTrigger asChild>
+                  <Button size="sm" variant="outline"><Plus className="w-3.5 h-3.5 mr-1" /> New Topic</Button>
+                </DialogTrigger>
+                <DialogContent>
+                  <DialogHeader>
+                    <DialogTitle>Create Topic</DialogTitle>
+                    <DialogDescription>Add a new topic to an existing course.</DialogDescription>
+                  </DialogHeader>
+                  <div className="space-y-3">
+                    <div>
+                      <Label className="text-xs">Course</Label>
+                      <Select value={newTopic.course_id} onValueChange={(v) => setNewTopic({ ...newTopic, course_id: v })}>
+                        <SelectTrigger className="mt-1"><SelectValue placeholder="Select course…" /></SelectTrigger>
+                        <SelectContent>
+                          {courses.map((c) => <SelectItem key={c.id} value={c.id}>{c.course_code} — {c.title}</SelectItem>)}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div>
+                      <Label className="text-xs">Title</Label>
+                      <Input value={newTopic.title} onChange={(e) => setNewTopic({ ...newTopic, title: e.target.value })} placeholder="Topic title" className="mt-1" maxLength={200} />
+                    </div>
+                    <div>
+                      <Label className="text-xs">Content / Description (optional)</Label>
+                      <Textarea value={newTopic.content} onChange={(e) => setNewTopic({ ...newTopic, content: e.target.value })} placeholder="Brief description…" className="mt-1" rows={3} maxLength={2000} />
+                    </div>
+                    <div>
+                      <Label className="text-xs">Sort Order</Label>
+                      <Input type="number" value={newTopic.sort_order} onChange={(e) => setNewTopic({ ...newTopic, sort_order: Number(e.target.value) })} className="mt-1 w-24" min={0} />
+                    </div>
+                  </div>
+                  <DialogFooter>
+                    <Button variant="outline" onClick={() => setShowCreateTopic(false)}>Cancel</Button>
+                    <Button onClick={handleCreateTopic} disabled={creatingTopic}>
+                      {creatingTopic ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Plus className="w-4 h-4 mr-2" />}
+                      Create
+                    </Button>
+                  </DialogFooter>
+                </DialogContent>
+              </Dialog>
+            </div>
+          </div>
 
           <TabsContent value="courses">
             <Card className="shadow-card">
@@ -715,7 +829,10 @@ export default function Admin() {
                                 <Button size="icon" variant="ghost" className="h-8 w-8" onClick={cancelEditCourse}><X className="w-3.5 h-3.5" /></Button>
                               </div>
                             ) : (
-                              <Button size="icon" variant="ghost" className="h-8 w-8" onClick={() => startEditCourse(course)}><Pencil className="w-3.5 h-3.5" /></Button>
+                              <div className="flex justify-end gap-1">
+                                <Button size="icon" variant="ghost" className="h-8 w-8" onClick={() => startEditCourse(course)}><Pencil className="w-3.5 h-3.5" /></Button>
+                                <Button size="icon" variant="ghost" className="h-8 w-8 text-destructive hover:text-destructive" onClick={() => deleteCourse(course.id)}><Trash2 className="w-3.5 h-3.5" /></Button>
+                              </div>
                             )}
                           </TableCell>
                         </TableRow>
@@ -767,7 +884,10 @@ export default function Admin() {
                                 <Button size="icon" variant="ghost" className="h-8 w-8" onClick={cancelEditTopic}><X className="w-3.5 h-3.5" /></Button>
                               </div>
                             ) : (
-                              <Button size="icon" variant="ghost" className="h-8 w-8" onClick={() => startEditTopic(topic)}><Pencil className="w-3.5 h-3.5" /></Button>
+                              <div className="flex justify-end gap-1">
+                                <Button size="icon" variant="ghost" className="h-8 w-8" onClick={() => startEditTopic(topic)}><Pencil className="w-3.5 h-3.5" /></Button>
+                                <Button size="icon" variant="ghost" className="h-8 w-8 text-destructive hover:text-destructive" onClick={() => deleteTopic(topic.id)}><Trash2 className="w-3.5 h-3.5" /></Button>
+                              </div>
                             )}
                           </TableCell>
                         </TableRow>
