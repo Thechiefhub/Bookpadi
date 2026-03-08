@@ -404,6 +404,7 @@ export default function CourseQuestions() {
       return;
     }
 
+    setTimerActive(false);
     setSubmitted(true);
     setAnswersText("");
     setGeneratingAnswers(true);
