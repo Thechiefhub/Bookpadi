@@ -220,6 +220,6 @@ const _universities = [
   { name: "Phoenix University, Agwada", type: "private" },
   { name: "Sports University, Idumuje-Ugboko", type: "private" },
   { name: "Wigwe University, Isiokpo", type: "private" },
-] as const satisfies readonly University[];
+] satisfies University[];
 
-export const sortedUniversities = [...nigerianUniversities].sort((a, b) => a.name.localeCompare(b.name));
+export const nigerianUniversities: University[] = [..._universities].sort((a, b) => a.name.localeCompare(b.name));
