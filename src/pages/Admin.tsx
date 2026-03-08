@@ -904,8 +904,16 @@ export default function Admin() {
                           </TableCell>
                           <TableCell>
                             {editingTopicId === topic.id ? (
-                              <Input value={editTopicData.title ?? ""} onChange={(e) => setEditTopicData({ ...editTopicData, title: e.target.value })} className="h-8" />
-                            ) : topic.title}
+                              <div className="space-y-1.5">
+                                <Input value={editTopicData.title ?? ""} onChange={(e) => setEditTopicData({ ...editTopicData, title: e.target.value })} className="h-8" placeholder="Title" />
+                                <Textarea value={editTopicData.content ?? ""} onChange={(e) => setEditTopicData({ ...editTopicData, content: e.target.value })} className="text-xs min-h-[60px]" placeholder="Content / description (optional)" rows={2} />
+                              </div>
+                            ) : (
+                              <div>
+                                <span>{topic.title}</span>
+                                {topic.content && <p className="text-xs text-muted-foreground mt-0.5 line-clamp-1">{topic.content}</p>}
+                              </div>
+                            )}
                           </TableCell>
                           <TableCell className="hidden sm:table-cell">
                             <Badge variant="outline" className="text-xs font-mono">{topic.course_code}</Badge>
