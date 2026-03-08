@@ -41,6 +41,21 @@ function ProtectedRoute({ children }: { children: React.ReactNode }) {
   return <>{children}</>;
 }
 
+function AuthOnlyRoute({ children }: { children: React.ReactNode }) {
+  const { user, loading } = useAuth();
+
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-background">
+        <Loader2 className="w-8 h-8 animate-spin text-primary" />
+      </div>
+    );
+  }
+
+  if (!user) return <Navigate to="/login" />;
+  return <>{children}</>;
+}
+
 function PublicRoute({ children }: { children: React.ReactNode }) {
   const { user, profile, loading } = useAuth();
 
@@ -66,7 +81,7 @@ function AppRoutes() {
       <Route path="/signup" element={<PublicRoute><Signup /></PublicRoute>} />
       <Route path="/forgot-password" element={<ForgotPassword />} />
       <Route path="/reset-password" element={<ResetPassword />} />
-      <Route path="/onboarding" element={<ProtectedRoute><Onboarding /></ProtectedRoute>} />
+      <Route path="/onboarding" element={<AuthOnlyRoute><Onboarding /></AuthOnlyRoute>} />
       <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
       <Route path="/course/:id" element={<ProtectedRoute><CourseDetail /></ProtectedRoute>} />
       <Route path="/course/:id/guide" element={<ProtectedRoute><StudyGuide /></ProtectedRoute>} />
