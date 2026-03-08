@@ -563,6 +563,10 @@ export default function CourseQuestions() {
         {/* Quiz interactive mode */}
         {mode === "quiz" && questionsText && (
           <>
+            {/* Timer bar */}
+            {timerActive && !submitted && (
+              <TimerBar secondsLeft={secondsLeft} totalSeconds={timerDuration} />
+            )}
             {/* Action bar */}
             <div className="flex items-center justify-between flex-wrap gap-2">
               <div className="flex items-center gap-2">
