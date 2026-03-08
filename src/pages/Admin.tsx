@@ -961,6 +961,57 @@ export default function Admin() {
               </CardContent>
             </Card>
           </TabsContent>
+
+          <TabsContent value="users">
+            <Card className="shadow-card">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2 text-lg">
+                  <Users className="w-5 h-5 text-primary" />
+                  Registered Users
+                </CardTitle>
+                <CardDescription>All users who have signed up on the platform.</CardDescription>
+              </CardHeader>
+              <CardContent className="p-0">
+                {usersLoading ? (
+                  <div className="flex items-center justify-center py-12">
+                    <Loader2 className="w-6 h-6 animate-spin text-primary" />
+                  </div>
+                ) : registeredUsers.length === 0 ? (
+                  <div className="text-center py-12 text-muted-foreground">No registered users found.</div>
+                ) : (
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead className="w-12">#</TableHead>
+                        <TableHead>Full Name</TableHead>
+                        <TableHead>Email</TableHead>
+                        <TableHead>Department</TableHead>
+                        <TableHead>Level</TableHead>
+                        <TableHead>Joined</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {registeredUsers.map((u, idx) => (
+                        <TableRow key={u.user_id}>
+                          <TableCell className="font-mono text-xs text-muted-foreground">{idx + 1}</TableCell>
+                          <TableCell className="font-medium">{u.full_name || <span className="text-muted-foreground italic">—</span>}</TableCell>
+                          <TableCell>
+                            <span className="flex items-center gap-1.5 text-sm">
+                              <Mail className="w-3.5 h-3.5 text-muted-foreground" />
+                              {u.email}
+                            </span>
+                          </TableCell>
+                          <TableCell>{u.department_name || <span className="text-muted-foreground italic">Not set</span>}</TableCell>
+                          <TableCell>{u.level ? <Badge variant="secondary">{u.level}L</Badge> : <span className="text-muted-foreground italic">—</span>}</TableCell>
+                          <TableCell className="text-xs text-muted-foreground">{new Date(u.created_at).toLocaleDateString()}</TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                )}
+              </CardContent>
+            </Card>
+          </TabsContent>
         </Tabs>
       </main>
 
