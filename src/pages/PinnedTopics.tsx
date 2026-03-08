@@ -1,12 +1,20 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import AppLayout from "@/components/AppLayout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
-import { Loader2, Pin, Save, Trash2 } from "lucide-react";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+} from "@/components/ui/dialog";
+import { Loader2, Pin, Save, Trash2, Sparkles } from "lucide-react";
 import { toast } from "sonner";
+import ReactMarkdown from "react-markdown";
 
 interface PinnedTopic {
   id: string;
@@ -29,6 +37,12 @@ export default function PinnedTopics() {
   const [loading, setLoading] = useState(true);
   const [editingNotes, setEditingNotes] = useState<Record<string, string>>({});
   const [saving, setSaving] = useState<string | null>(null);
+
+  // AI Explain state
+  const [explainOpen, setExplainOpen] = useState(false);
+  const [explainPin, setExplainPin] = useState<PinnedTopic | null>(null);
+  const [explainText, setExplainText] = useState("");
+  const [explainLoading, setExplainLoading] = useState(false);
 
   useEffect(() => {
     if (!user) return;
@@ -63,6 +77,78 @@ export default function PinnedTopics() {
     setPinned(pinned.filter(p => p.id !== pinId));
     toast.success("Topic unpinned");
   };
+
+  const handleExplain = useCallback(async (pin: PinnedTopic) => {
+    setExplainPin(pin);
+    setExplainText("");
+    setExplainOpen(true);
+    setExplainLoading(true);
+
+    try {
+      const resp = await fetch(
+        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/explain-topic`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
+          },
+          body: JSON.stringify({
+            topicTitle: pin.topics.title,
+            topicContent: pin.topics.content,
+            courseTitle: pin.topics.courses.title,
+          }),
+        }
+      );
+
+      if (!resp.ok) {
+        const err = await resp.json().catch(() => ({ error: "AI service error" }));
+        toast.error(err.error || "Failed to get explanation");
+        setExplainLoading(false);
+        return;
+      }
+
+      if (!resp.body) throw new Error("No response body");
+
+      const reader = resp.body.getReader();
+      const decoder = new TextDecoder();
+      let buffer = "";
+      let accumulated = "";
+
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        buffer += decoder.decode(value, { stream: true });
+
+        let newlineIndex: number;
+        while ((newlineIndex = buffer.indexOf("\n")) !== -1) {
+          let line = buffer.slice(0, newlineIndex);
+          buffer = buffer.slice(newlineIndex + 1);
+          if (line.endsWith("\r")) line = line.slice(0, -1);
+          if (line.startsWith(":") || line.trim() === "") continue;
+          if (!line.startsWith("data: ")) continue;
+          const jsonStr = line.slice(6).trim();
+          if (jsonStr === "[DONE]") break;
+          try {
+            const parsed = JSON.parse(jsonStr);
+            const content = parsed.choices?.[0]?.delta?.content;
+            if (content) {
+              accumulated += content;
+              setExplainText(accumulated);
+            }
+          } catch {
+            buffer = line + "\n" + buffer;
+            break;
+          }
+        }
+      }
+    } catch (e) {
+      console.error("Explain error:", e);
+      toast.error("Failed to get AI explanation");
+    } finally {
+      setExplainLoading(false);
+    }
+  }, []);
 
   if (loading) {
     return (
@@ -102,9 +188,19 @@ export default function PinnedTopics() {
                     </p>
                     <CardTitle className="text-base mt-1">{pin.topics.title}</CardTitle>
                   </div>
-                  <Button variant="ghost" size="icon" onClick={() => removePin(pin.id)}>
-                    <Trash2 className="w-4 h-4 text-destructive" />
-                  </Button>
+                  <div className="flex items-center gap-1 shrink-0">
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={() => handleExplain(pin)}
+                      title="Explain with AI"
+                    >
+                      <Sparkles className="w-4 h-4 text-amber-500" />
+                    </Button>
+                    <Button variant="ghost" size="icon" onClick={() => removePin(pin.id)}>
+                      <Trash2 className="w-4 h-4 text-destructive" />
+                    </Button>
+                  </div>
                 </div>
               </CardHeader>
               <CardContent className="space-y-4">
@@ -136,6 +232,30 @@ export default function PinnedTopics() {
           ))
         )}
       </div>
+
+      {/* AI Explain Dialog */}
+      <Dialog open={explainOpen} onOpenChange={setExplainOpen}>
+        <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Sparkles className="w-5 h-5 text-amber-500" />
+              AI Explanation
+            </DialogTitle>
+            <DialogDescription>
+              {explainPin?.topics.title}
+            </DialogDescription>
+          </DialogHeader>
+          <div className="prose prose-sm dark:prose-invert max-w-none">
+            {explainLoading && !explainText && (
+              <div className="flex items-center gap-2 text-muted-foreground py-4">
+                <Loader2 className="w-4 h-4 animate-spin" />
+                Generating explanation…
+              </div>
+            )}
+            {explainText && <ReactMarkdown>{explainText}</ReactMarkdown>}
+          </div>
+        </DialogContent>
+      </Dialog>
     </AppLayout>
   );
 }
