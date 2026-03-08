@@ -519,6 +519,23 @@ export default function CourseQuestions() {
                   AI will generate exam-style questions covering all {topics.length} topics
                 </p>
               </div>
+
+              {/* Timer selector */}
+              <div className="flex items-center justify-center gap-2">
+                <Timer className="w-4 h-4 text-muted-foreground" />
+                <span className="text-sm text-muted-foreground">Quiz Timer:</span>
+                <Select value={String(timerDuration)} onValueChange={(v) => setTimerDuration(parseInt(v, 10))}>
+                  <SelectTrigger className="w-[160px]">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {TIMER_OPTIONS.map((opt) => (
+                      <SelectItem key={opt.value} value={opt.value}>{opt.label}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
               <div className="flex flex-col sm:flex-row gap-3 justify-center">
                 <Button onClick={() => handleGenerate("quiz")} className="gap-2 gradient-primary hover:opacity-90" size="lg">
                   <ClipboardList className="w-5 h-5" /> Objective / Quiz (MCQ)
