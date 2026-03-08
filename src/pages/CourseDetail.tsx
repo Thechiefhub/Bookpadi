@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { useParams, Link } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
@@ -6,8 +6,16 @@ import AppLayout from "@/components/AppLayout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Loader2, ArrowLeft, Pin, PinOff, BookOpen, ExternalLink, Youtube } from "lucide-react";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+} from "@/components/ui/dialog";
+import { Loader2, ArrowLeft, Pin, PinOff, BookOpen, ExternalLink, Youtube, Sparkles } from "lucide-react";
 import { toast } from "sonner";
+import ReactMarkdown from "react-markdown";
 
 interface Course {
   id: string;
@@ -38,6 +46,12 @@ export default function CourseDetail() {
   const [pins, setPins] = useState<PinRecord[]>([]);
   const [loading, setLoading] = useState(true);
   const [expandedTopic, setExpandedTopic] = useState<string | null>(null);
+
+  // AI Explain state
+  const [explainOpen, setExplainOpen] = useState(false);
+  const [explainTopic, setExplainTopic] = useState<Topic | null>(null);
+  const [explainText, setExplainText] = useState("");
+  const [explainLoading, setExplainLoading] = useState(false);
 
   useEffect(() => {
     if (!id) return;
@@ -78,6 +92,78 @@ export default function CourseDetail() {
       }
     }
   };
+
+  const handleExplain = useCallback(async (topic: Topic) => {
+    setExplainTopic(topic);
+    setExplainText("");
+    setExplainOpen(true);
+    setExplainLoading(true);
+
+    try {
+      const resp = await fetch(
+        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/explain-topic`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
+          },
+          body: JSON.stringify({
+            topicTitle: topic.title,
+            topicContent: topic.content,
+            courseTitle: course?.title || "",
+          }),
+        }
+      );
+
+      if (!resp.ok) {
+        const err = await resp.json().catch(() => ({ error: "AI service error" }));
+        toast.error(err.error || "Failed to get explanation");
+        setExplainLoading(false);
+        return;
+      }
+
+      if (!resp.body) throw new Error("No response body");
+
+      const reader = resp.body.getReader();
+      const decoder = new TextDecoder();
+      let buffer = "";
+      let accumulated = "";
+
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        buffer += decoder.decode(value, { stream: true });
+
+        let newlineIndex: number;
+        while ((newlineIndex = buffer.indexOf("\n")) !== -1) {
+          let line = buffer.slice(0, newlineIndex);
+          buffer = buffer.slice(newlineIndex + 1);
+          if (line.endsWith("\r")) line = line.slice(0, -1);
+          if (line.startsWith(":") || line.trim() === "") continue;
+          if (!line.startsWith("data: ")) continue;
+          const jsonStr = line.slice(6).trim();
+          if (jsonStr === "[DONE]") break;
+          try {
+            const parsed = JSON.parse(jsonStr);
+            const content = parsed.choices?.[0]?.delta?.content;
+            if (content) {
+              accumulated += content;
+              setExplainText(accumulated);
+            }
+          } catch {
+            buffer = line + "\n" + buffer;
+            break;
+          }
+        }
+      }
+    } catch (e) {
+      console.error("Explain error:", e);
+      toast.error("Failed to get AI explanation");
+    } finally {
+      setExplainLoading(false);
+    }
+  }, [course]);
 
   if (loading) {
     return (
@@ -137,21 +223,33 @@ export default function CourseDetail() {
                         </span>
                         <CardTitle className="text-base">{topic.title}</CardTitle>
                       </div>
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        className="shrink-0"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          togglePin(topic.id);
-                        }}
-                      >
-                        {isPinned(topic.id) ? (
-                          <PinOff className="w-4 h-4 text-primary" />
-                        ) : (
-                          <Pin className="w-4 h-4" />
-                        )}
-                      </Button>
+                      <div className="flex items-center gap-1 shrink-0">
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleExplain(topic);
+                          }}
+                          title="Explain with AI"
+                        >
+                          <Sparkles className="w-4 h-4 text-amber-500" />
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            togglePin(topic.id);
+                          }}
+                        >
+                          {isPinned(topic.id) ? (
+                            <PinOff className="w-4 h-4 text-primary" />
+                          ) : (
+                            <Pin className="w-4 h-4" />
+                          )}
+                        </Button>
+                      </div>
                     </div>
                   </CardHeader>
                   {expandedTopic === topic.id && (
@@ -190,6 +288,30 @@ export default function CourseDetail() {
           )}
         </div>
       </div>
+
+      {/* AI Explain Dialog */}
+      <Dialog open={explainOpen} onOpenChange={setExplainOpen}>
+        <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Sparkles className="w-5 h-5 text-amber-500" />
+              AI Explanation
+            </DialogTitle>
+            <DialogDescription>
+              {explainTopic?.title}
+            </DialogDescription>
+          </DialogHeader>
+          <div className="prose prose-sm dark:prose-invert max-w-none">
+            {explainLoading && !explainText && (
+              <div className="flex items-center gap-2 text-muted-foreground py-4">
+                <Loader2 className="w-4 h-4 animate-spin" />
+                Generating explanation…
+              </div>
+            )}
+            {explainText && <ReactMarkdown>{explainText}</ReactMarkdown>}
+          </div>
+        </DialogContent>
+      </Dialog>
     </AppLayout>
   );
 }
