@@ -198,11 +198,18 @@ export default function CourseDetail() {
               <p className="mt-2 text-muted-foreground leading-relaxed">{course.description}</p>
             )}
           </div>
-          <Link to={`/course/${id}/guide`}>
-            <Button variant="outline" size="sm" className="gap-1.5">
-              <FileText className="w-4 h-4" /> Study Guide
-            </Button>
-          </Link>
+          <div className="flex gap-2">
+            <Link to={`/course/${id}/guide`}>
+              <Button variant="outline" size="sm" className="gap-1.5">
+                <FileText className="w-4 h-4" /> Study Guide
+              </Button>
+            </Link>
+            <Link to={`/course/${id}/questions`}>
+              <Button variant="outline" size="sm" className="gap-1.5">
+                <BookOpen className="w-4 h-4" /> Practice Questions
+              </Button>
+            </Link>
+          </div>
         </div>
 
         <div className="space-y-3">
