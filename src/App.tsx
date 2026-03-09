@@ -21,6 +21,7 @@ import SavedPlans from "./pages/SavedPlans";
 import Search from "./pages/Search";
 import Settings from "./pages/Settings";
 import Admin from "./pages/Admin";
+import Research from "./pages/Research";
 import NotFound from "./pages/NotFound";
 import { Loader2 } from "lucide-react";
 
