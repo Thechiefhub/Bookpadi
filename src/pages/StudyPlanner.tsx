@@ -7,58 +7,13 @@ import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Calendar, Loader2, Sparkles, Lightbulb, ArrowLeft, Save, Clock } from "lucide-react";
+import { Calendar, Loader2, Sparkles, Lightbulb, ArrowLeft, Save, CalendarPlus } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
-
-interface Course {
-  id: string;
-  course_code: string;
-  title: string;
-  units: number;
-}
-
-interface Session {
-  time: string;
-  course_code: string | null;
-  title: string;
-  activity: string;
-}
-
-interface DaySchedule {
-  day: string;
-  sessions: Session[];
-}
-
-interface Timetable {
-  schedule: DaySchedule[];
-  tips: string[];
-}
-
-const DAYS = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"];
-const TIME_OPTIONS = [
-  "06:00", "07:00", "08:00", "09:00", "10:00", "11:00", "12:00",
-  "13:00", "14:00", "15:00", "16:00", "17:00", "18:00", "19:00", "20:00",
-];
-
-// Simple hash-based color assignment for courses
-const COURSE_COLORS = [
-  "bg-blue-100 text-blue-800 border-blue-200 dark:bg-blue-900/30 dark:text-blue-300 dark:border-blue-800",
-  "bg-emerald-100 text-emerald-800 border-emerald-200 dark:bg-emerald-900/30 dark:text-emerald-300 dark:border-emerald-800",
-  "bg-violet-100 text-violet-800 border-violet-200 dark:bg-violet-900/30 dark:text-violet-300 dark:border-violet-800",
-  "bg-amber-100 text-amber-800 border-amber-200 dark:bg-amber-900/30 dark:text-amber-300 dark:border-amber-800",
-  "bg-rose-100 text-rose-800 border-rose-200 dark:bg-rose-900/30 dark:text-rose-300 dark:border-rose-800",
-  "bg-cyan-100 text-cyan-800 border-cyan-200 dark:bg-cyan-900/30 dark:text-cyan-300 dark:border-cyan-800",
-  "bg-orange-100 text-orange-800 border-orange-200 dark:bg-orange-900/30 dark:text-orange-300 dark:border-orange-800",
-  "bg-pink-100 text-pink-800 border-pink-200 dark:bg-pink-900/30 dark:text-pink-300 dark:border-pink-800",
-];
-
-function getCourseColor(courseCode: string | null, allCodes: string[]): string {
-  if (!courseCode) return "bg-muted text-muted-foreground border-border";
-  const idx = allCodes.indexOf(courseCode);
-  return COURSE_COLORS[idx % COURSE_COLORS.length];
-}
+import TimetableGrid from "@/components/study-planner/TimetableGrid";
+import { downloadICS } from "@/components/study-planner/calendarExport";
+import { Course, Timetable, DAYS, TIME_OPTIONS_24H, getCourseColor } from "@/components/study-planner/types";
 
 export default function StudyPlanner() {
   const { user } = useAuth();
@@ -99,27 +54,23 @@ export default function StudyPlanner() {
     fetchCourses();
   }, [user]);
 
-  const toggleCourse = (id: string) => {
+  const toggleCourse = (id: string) =>
     setSelectedCourses((prev) =>
       prev.includes(id) ? prev.filter((c) => c !== id) : [...prev, id]
     );
-  };
 
-  const toggleDayOff = (day: string) => {
+  const toggleDayOff = (day: string) =>
     setDaysOff((prev) =>
       prev.includes(day) ? prev.filter((d) => d !== day) : [...prev, day]
     );
-  };
 
   const handleGenerate = async () => {
     if (selectedCourses.length === 0) {
       toast.error("Please select at least one course");
       return;
     }
-
     const chosen = courses.filter((c) => selectedCourses.includes(c.id));
     setLoading(true);
-
     try {
       const resp = await fetch(
         `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/generate-timetable`,
@@ -138,13 +89,11 @@ export default function StudyPlanner() {
           }),
         }
       );
-
       if (!resp.ok) {
         const err = await resp.json().catch(() => ({ error: "Failed to generate timetable" }));
         toast.error(err.error || "Failed to generate timetable");
         return;
       }
-
       const data: Timetable = await resp.json();
       setTimetable(data);
       setView("result");
@@ -167,19 +116,25 @@ export default function StudyPlanner() {
       data: timetable as any,
     });
     setSaving(false);
-    if (error) {
-      toast.error("Failed to save timetable");
-    } else {
-      toast.success("Timetable saved!");
-    }
+    if (error) toast.error("Failed to save timetable");
+    else toast.success("Timetable saved!");
   };
 
-  const allCourseCodes = courses.filter((c) => selectedCourses.includes(c.id)).map((c) => c.course_code);
+  const handleCalendarExport = () => {
+    if (!timetable) return;
+    downloadICS(timetable);
+    toast.success("Calendar file downloaded! Open it to add events to Google Calendar, Outlook, or Apple Calendar. Each session includes a 30-minute reminder.");
+  };
 
+  const allCourseCodes = courses
+    .filter((c) => selectedCourses.includes(c.id))
+    .map((c) => c.course_code);
+
+  // ── Result View ──
   if (view === "result" && timetable) {
     return (
       <AppLayout>
-        <div className="space-y-6 max-w-5xl mx-auto">
+        <div className="space-y-6 max-w-6xl mx-auto">
           <div className="flex items-center justify-between flex-wrap gap-3">
             <button
               onClick={() => setView("setup")}
@@ -187,17 +142,23 @@ export default function StudyPlanner() {
             >
               <ArrowLeft className="w-4 h-4" /> Back to settings
             </button>
-            <Button onClick={handleSave} disabled={saving} size="sm">
-              {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
-              Save Timetable
-            </Button>
+            <div className="flex gap-2 flex-wrap">
+              <Button onClick={handleCalendarExport} variant="outline" size="sm">
+                <CalendarPlus className="w-4 h-4" />
+                Add to Calendar
+              </Button>
+              <Button onClick={handleSave} disabled={saving} size="sm">
+                {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
+                Save Timetable
+              </Button>
+            </div>
           </div>
 
           <div>
             <h1 className="text-2xl font-bold flex items-center gap-2">
               <Calendar className="w-6 h-6 text-primary" /> Your Study Timetable
             </h1>
-            <p className="text-muted-foreground mt-1">AI-generated weekly schedule</p>
+            <p className="text-muted-foreground mt-1">AI-generated weekly schedule — hover on sessions for details</p>
           </div>
 
           {/* Course Legend */}
@@ -212,42 +173,24 @@ export default function StudyPlanner() {
             ))}
           </div>
 
-          {/* Timetable Grid */}
-          <div className="space-y-4">
-            {timetable.schedule.map((day) => (
-              <Card key={day.day}>
-                <CardHeader className="pb-2">
-                  <CardTitle className="text-base">{day.day}</CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-2">
-                  {day.sessions.length === 0 ? (
-                    <p className="text-sm text-muted-foreground italic">Day off — rest and recharge!</p>
-                  ) : (
-                    day.sessions.map((session, i) => (
-                      <div
-                        key={i}
-                        className={`flex gap-3 p-3 rounded-lg border ${getCourseColor(session.course_code, allCourseCodes)}`}
-                      >
-                        <div className="shrink-0 w-28 text-xs font-mono flex items-center gap-1">
-                          <Clock className="w-3 h-3" />
-                          {session.time}
-                        </div>
-                        <div className="flex-1 min-w-0">
-                          <p className="text-sm font-medium">
-                            {session.course_code && (
-                              <span className="font-mono mr-1.5">{session.course_code}</span>
-                            )}
-                            {session.title}
-                          </p>
-                          <p className="text-xs opacity-80 mt-0.5">{session.activity}</p>
-                        </div>
-                      </div>
-                    ))
-                  )}
-                </CardContent>
-              </Card>
-            ))}
-          </div>
+          {/* Grid Timetable */}
+          <TimetableGrid timetable={timetable} allCourseCodes={allCourseCodes} />
+
+          {/* Calendar integration note */}
+          <Card className="border-dashed">
+            <CardContent className="py-4">
+              <div className="flex items-start gap-3">
+                <CalendarPlus className="w-5 h-5 text-primary shrink-0 mt-0.5" />
+                <div>
+                  <p className="text-sm font-medium">Sync with your calendar</p>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    Click "Add to Calendar" to download an .ics file. Open it with Google Calendar, Outlook, or Apple Calendar.
+                    Each study session will be added as a weekly recurring event with a <strong>30-minute reminder</strong> before each session.
+                  </p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
 
           {/* Study Tips */}
           {timetable.tips?.length > 0 && (
@@ -274,6 +217,7 @@ export default function StudyPlanner() {
     );
   }
 
+  // ── Setup View ──
   return (
     <AppLayout>
       <div className="space-y-6 max-w-3xl mx-auto">
@@ -326,11 +270,7 @@ export default function StudyPlanner() {
             )}
             {courses.length > 0 && (
               <div className="flex gap-2 mt-3">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => setSelectedCourses(courses.map((c) => c.id))}
-                >
+                <Button variant="outline" size="sm" onClick={() => setSelectedCourses(courses.map((c) => c.id))}>
                   Select All
                 </Button>
                 <Button variant="outline" size="sm" onClick={() => setSelectedCourses([])}>
@@ -354,7 +294,7 @@ export default function StudyPlanner() {
                 <Input
                   type="number"
                   min="1"
-                  max="12"
+                  max="16"
                   value={studyHours}
                   onChange={(e) => setStudyHours(e.target.value)}
                 />
@@ -364,7 +304,7 @@ export default function StudyPlanner() {
                 <Select value={startTime} onValueChange={setStartTime}>
                   <SelectTrigger><SelectValue /></SelectTrigger>
                   <SelectContent>
-                    {TIME_OPTIONS.map((t) => (
+                    {TIME_OPTIONS_24H.map((t) => (
                       <SelectItem key={t} value={t}>{t}</SelectItem>
                     ))}
                   </SelectContent>
@@ -375,7 +315,7 @@ export default function StudyPlanner() {
                 <Select value={endTime} onValueChange={setEndTime}>
                   <SelectTrigger><SelectValue /></SelectTrigger>
                   <SelectContent>
-                    {TIME_OPTIONS.map((t) => (
+                    {TIME_OPTIONS_24H.map((t) => (
                       <SelectItem key={t} value={t}>{t}</SelectItem>
                     ))}
                   </SelectContent>
