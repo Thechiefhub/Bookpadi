@@ -1,416 +1,445 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import AppLayout from "@/components/AppLayout";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
+import { Textarea } from "@/components/ui/textarea";
+import { ScrollArea } from "@/components/ui/scroll-area";
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import { Separator } from "@/components/ui/separator";
-import { Loader2, Sparkles, ExternalLink, Microscope, BrainCircuit, Save, Trash2, Eye, ChevronRight } from "lucide-react";
+  Loader2,
+  Send,
+  Microscope,
+  Plus,
+  Save,
+  Trash2,
+  ChevronLeft,
+  User,
+  Bot,
+  Sparkles,
+  History,
+} from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import ReactMarkdown from "react-markdown";
+import { cn } from "@/lib/utils";
 
-type SourceKey = "google_scholar" | "arxiv" | "research_gate" | "ieee" | "semantic_scholar";
+type Msg = { role: "user" | "assistant"; content: string };
 
-type ReportData = {
-  project_title: string;
-  abstract: string;
-  objectives: string[];
-  literature_themes: string[];
-  methodology: string[];
-  project_ideas: { title: string; rationale: string }[];
-  action_plan: { phase: string; tasks: string[] }[];
-  references: { title: string; url: string; source: string; note: string }[];
-};
-
-type ResearchResult = {
-  success: boolean;
-  report: ReportData;
-  collected_sources: { title: string; url: string; source: SourceKey; snippet: string }[];
-  search_queries: { source: string; query: string }[];
-};
-
-type SavedBrief = {
+type SavedConversation = {
   id: string;
   title: string;
   created_at: string;
-  data: {
-    report: ReportData;
-    topic: string;
-    programme: string;
-    level: string;
-  };
+  data: { messages: Msg[] };
 };
 
-const sourceOptions: { value: SourceKey; label: string }[] = [
-  { value: "google_scholar", label: "Google Scholar" },
-  { value: "arxiv", label: "arXiv" },
-  { value: "research_gate", label: "ResearchGate" },
-  { value: "ieee", label: "IEEE Xplore" },
-  { value: "semantic_scholar", label: "Semantic Scholar" },
+const CHAT_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/research-chat`;
+
+async function streamChat({
+  messages,
+  onDelta,
+  onDone,
+  onError,
+}: {
+  messages: Msg[];
+  onDelta: (text: string) => void;
+  onDone: () => void;
+  onError: (msg: string) => void;
+}) {
+  const resp = await fetch(CHAT_URL, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
+    },
+    body: JSON.stringify({ messages }),
+  });
+
+  if (!resp.ok) {
+    const errBody = await resp.json().catch(() => null);
+    onError(errBody?.error || `Request failed (${resp.status})`);
+    return;
+  }
+
+  if (!resp.body) {
+    onError("No response body");
+    return;
+  }
+
+  const reader = resp.body.getReader();
+  const decoder = new TextDecoder();
+  let buf = "";
+
+  // eslint-disable-next-line no-constant-condition
+  while (true) {
+    const { done, value } = await reader.read();
+    if (done) break;
+    buf += decoder.decode(value, { stream: true });
+
+    let idx: number;
+    while ((idx = buf.indexOf("\n")) !== -1) {
+      let line = buf.slice(0, idx);
+      buf = buf.slice(idx + 1);
+      if (line.endsWith("\r")) line = line.slice(0, -1);
+      if (!line.startsWith("data: ")) continue;
+      const json = line.slice(6).trim();
+      if (json === "[DONE]") {
+        onDone();
+        return;
+      }
+      try {
+        const parsed = JSON.parse(json);
+        const c = parsed.choices?.[0]?.delta?.content;
+        if (c) onDelta(c);
+      } catch {
+        /* partial */
+      }
+    }
+  }
+  onDone();
+}
+
+// ─── Suggestion chips for empty state ────────────────────
+const suggestions = [
+  "Help me find a research topic on machine learning for healthcare in Nigeria",
+  "What are the key components of a good undergraduate research proposal?",
+  "Explain Bayesian statistics and how it applies to economic forecasting",
+  "Compare qualitative and quantitative research methodologies",
 ];
 
-function ReportView({ report, programme, level }: { report: ReportData; programme: string; level: string }) {
+function TypingIndicator() {
   return (
-    <div className="space-y-4">
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Microscope className="w-5 h-5" />
-            {report.project_title}
-          </CardTitle>
-          <CardDescription>{programme} · {level} Level</CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-6">
-          <div>
-            <p className="font-semibold mb-2">Abstract</p>
-            <div className="prose prose-sm dark:prose-invert max-w-none">
-              <ReactMarkdown>{report.abstract}</ReactMarkdown>
-            </div>
+    <div className="flex items-center gap-1 px-4 py-3">
+      <Bot className="w-5 h-5 text-primary shrink-0" />
+      <div className="flex gap-1 ml-2">
+        {[0, 1, 2].map((i) => (
+          <span
+            key={i}
+            className="w-2 h-2 rounded-full bg-primary/60 animate-bounce"
+            style={{ animationDelay: `${i * 150}ms` }}
+          />
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function ChatBubble({ msg, isLast }: { msg: Msg; isLast: boolean }) {
+  const isUser = msg.role === "user";
+  return (
+    <div className={cn("flex gap-3 px-4 py-3", isUser ? "justify-end" : "justify-start")}>
+      {!isUser && (
+        <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center shrink-0 mt-1">
+          <Bot className="w-4 h-4 text-primary" />
+        </div>
+      )}
+      <div
+        className={cn(
+          "rounded-2xl px-4 py-3 max-w-[85%] md:max-w-[75%] text-sm leading-relaxed",
+          isUser
+            ? "bg-primary text-primary-foreground rounded-br-md"
+            : "bg-muted rounded-bl-md"
+        )}
+      >
+        {isUser ? (
+          <p className="whitespace-pre-wrap">{msg.content}</p>
+        ) : (
+          <div className="prose prose-sm dark:prose-invert max-w-none [&_p]:my-1 [&_ul]:my-1 [&_ol]:my-1 [&_h2]:mt-3 [&_h2]:mb-1 [&_h3]:mt-2 [&_h3]:mb-1">
+            <ReactMarkdown>{msg.content}</ReactMarkdown>
           </div>
-
-          <Separator />
-
-          <div className="grid md:grid-cols-2 gap-6">
-            <div>
-              <p className="font-semibold mb-2">Objectives</p>
-              <ul className="space-y-2 text-sm text-muted-foreground list-disc pl-5">
-                {report.objectives.map((obj, i) => <li key={i}>{obj}</li>)}
-              </ul>
-            </div>
-            <div>
-              <p className="font-semibold mb-2">Literature Themes</p>
-              <ul className="space-y-2 text-sm text-muted-foreground list-disc pl-5">
-                {report.literature_themes.map((theme, i) => <li key={i}>{theme}</li>)}
-              </ul>
-            </div>
-          </div>
-
-          <Separator />
-
-          <div>
-            <p className="font-semibold mb-2">Methodology</p>
-            <ul className="space-y-2 text-sm text-muted-foreground list-disc pl-5">
-              {report.methodology.map((m, i) => <li key={i}>{m}</li>)}
-            </ul>
-          </div>
-        </CardContent>
-      </Card>
-
-      <Card>
-        <CardHeader><CardTitle>Project Idea Variants</CardTitle></CardHeader>
-        <CardContent className="grid md:grid-cols-2 gap-4">
-          {report.project_ideas.map((idea, i) => (
-            <div key={i} className="rounded-lg border p-4 space-y-2">
-              <p className="font-medium">{idea.title}</p>
-              <p className="text-sm text-muted-foreground">{idea.rationale}</p>
-            </div>
-          ))}
-        </CardContent>
-      </Card>
-
-      <Card>
-        <CardHeader><CardTitle>Execution Plan</CardTitle></CardHeader>
-        <CardContent className="space-y-4">
-          {report.action_plan.map((phase, i) => (
-            <div key={i} className="rounded-lg border p-4">
-              <p className="font-medium mb-2">{phase.phase}</p>
-              <ul className="space-y-1 text-sm text-muted-foreground list-disc pl-5">
-                {phase.tasks.map((task, j) => <li key={j}>{task}</li>)}
-              </ul>
-            </div>
-          ))}
-        </CardContent>
-      </Card>
-
-      <Card>
-        <CardHeader>
-          <CardTitle>References</CardTitle>
-          <CardDescription>{report.references.length} citations</CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-3">
-          {report.references.map((ref, i) => (
-            <div key={`${ref.url}-${i}`} className="rounded-lg border p-4 space-y-2">
-              <p className="font-medium">{ref.title}</p>
-              <p className="text-sm text-muted-foreground">{ref.note}</p>
-              <div className="flex items-center justify-between gap-3 flex-wrap">
-                <Badge variant="outline">{ref.source}</Badge>
-                <a href={ref.url} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1 text-sm text-primary hover:underline">
-                  Open source <ExternalLink className="w-3.5 h-3.5" />
-                </a>
-              </div>
-            </div>
-          ))}
-        </CardContent>
-      </Card>
+        )}
+      </div>
+      {isUser && (
+        <div className="w-8 h-8 rounded-full bg-secondary flex items-center justify-center shrink-0 mt-1">
+          <User className="w-4 h-4 text-secondary-foreground" />
+        </div>
+      )}
     </div>
   );
 }
 
 export default function Research() {
-  const { user, profile } = useAuth();
-  const [topic, setTopic] = useState("");
-  const [projectGoal, setProjectGoal] = useState("Produce a rigorous undergraduate research project proposal and implementation roadmap.");
-  const [programme, setProgramme] = useState("BSc Statistics");
-  const [level, setLevel] = useState("300");
-  const [depth, setDepth] = useState("standard");
-  const [sources, setSources] = useState<SourceKey[]>(["google_scholar", "arxiv", "research_gate"]);
-  const [loading, setLoading] = useState(false);
+  const { user } = useAuth();
+  const [messages, setMessages] = useState<Msg[]>([]);
+  const [input, setInput] = useState("");
+  const [isStreaming, setIsStreaming] = useState(false);
   const [saving, setSaving] = useState(false);
-  const [result, setResult] = useState<ResearchResult | null>(null);
+  const [showHistory, setShowHistory] = useState(false);
+  const [savedConvos, setSavedConvos] = useState<SavedConversation[]>([]);
+  const [loadingHistory, setLoadingHistory] = useState(false);
+  const scrollRef = useRef<HTMLDivElement>(null);
+  const inputRef = useRef<HTMLTextAreaElement>(null);
 
-  const [savedBriefs, setSavedBriefs] = useState<SavedBrief[]>([]);
-  const [loadingSaved, setLoadingSaved] = useState(true);
-  const [viewingBrief, setViewingBrief] = useState<SavedBrief | null>(null);
+  const scrollToBottom = useCallback(() => {
+    setTimeout(() => {
+      scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight, behavior: "smooth" });
+    }, 50);
+  }, []);
 
   useEffect(() => {
-    if (profile?.level) setLevel(String(profile.level));
-  }, [profile?.level]);
+    scrollToBottom();
+  }, [messages, isStreaming, scrollToBottom]);
 
-  const fetchSavedBriefs = useCallback(async () => {
+  const fetchHistory = useCallback(async () => {
     if (!user) return;
-    setLoadingSaved(true);
+    setLoadingHistory(true);
     const { data } = await supabase
       .from("study_plans")
       .select("id, title, created_at, data")
       .eq("user_id", user.id)
-      .eq("type", "research")
+      .eq("type", "research_chat")
       .order("created_at", { ascending: false });
-    setSavedBriefs((data as unknown as SavedBrief[]) || []);
-    setLoadingSaved(false);
+    setSavedConvos((data as unknown as SavedConversation[]) || []);
+    setLoadingHistory(false);
   }, [user]);
 
   useEffect(() => {
-    fetchSavedBriefs();
-  }, [fetchSavedBriefs]);
+    fetchHistory();
+  }, [fetchHistory]);
 
-  const selectedSourceLabels = useMemo(
-    () => sourceOptions.filter((o) => sources.includes(o.value)).map((o) => o.label),
-    [sources],
-  );
+  const send = async (text?: string) => {
+    const content = (text || input).trim();
+    if (!content || isStreaming) return;
+    setInput("");
 
-  const toggleSource = (source: SourceKey) => {
-    setSources((prev) => {
-      if (prev.includes(source)) {
-        if (prev.length === 1) return prev;
-        return prev.filter((s) => s !== source);
-      }
-      return [...prev, source];
-    });
+    const userMsg: Msg = { role: "user", content };
+    const updatedMessages = [...messages, userMsg];
+    setMessages(updatedMessages);
+    setIsStreaming(true);
+
+    let assistantContent = "";
+    const upsert = (chunk: string) => {
+      assistantContent += chunk;
+      setMessages((prev) => {
+        const last = prev[prev.length - 1];
+        if (last?.role === "assistant") {
+          return prev.map((m, i) => (i === prev.length - 1 ? { ...m, content: assistantContent } : m));
+        }
+        return [...prev, { role: "assistant", content: assistantContent }];
+      });
+    };
+
+    try {
+      await streamChat({
+        messages: updatedMessages,
+        onDelta: upsert,
+        onDone: () => setIsStreaming(false),
+        onError: (msg) => {
+          toast.error(msg);
+          setIsStreaming(false);
+        },
+      });
+    } catch {
+      toast.error("Failed to connect to research assistant.");
+      setIsStreaming(false);
+    }
   };
 
-  const runResearch = async () => {
-    if (topic.trim().length < 5) {
-      toast.error("Please enter a clearer research topic.");
-      return;
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === "Enter" && !e.shiftKey) {
+      e.preventDefault();
+      send();
     }
-    setLoading(true);
-    setResult(null);
-    setViewingBrief(null);
+  };
 
-    const { data, error } = await supabase.functions.invoke("ai-research-agent", {
-      body: { topic: topic.trim(), projectGoal: projectGoal.trim(), programme: programme.trim() || "BSc Statistics", level, depth, sources },
-    });
-
-    setLoading(false);
-    if (error) { toast.error(error.message || "Failed to run research agent."); return; }
-    if (data?.error) { toast.error(data.error); return; }
-    setResult(data as ResearchResult);
-    toast.success("Research brief generated.");
+  const handleNewChat = () => {
+    setMessages([]);
+    setInput("");
+    setShowHistory(false);
+    inputRef.current?.focus();
   };
 
   const handleSave = async () => {
-    if (!result?.report || !user) return;
+    if (!user || messages.length < 2) return;
     setSaving(true);
+    const title = messages[0].content.slice(0, 80);
     const { error } = await supabase.from("study_plans").insert({
       user_id: user.id,
-      title: `Research — ${result.report.project_title}`,
-      type: "research",
-      data: { report: result.report, topic, programme, level } as any,
+      title: `Research — ${title}`,
+      type: "research_chat",
+      data: { messages } as any,
     });
     setSaving(false);
-    if (error) { toast.error("Failed to save research brief."); return; }
-    toast.success("Research brief saved!");
-    fetchSavedBriefs();
+    if (error) {
+      toast.error("Failed to save conversation.");
+      return;
+    }
+    toast.success("Conversation saved!");
+    fetchHistory();
   };
 
-  const handleDelete = async (id: string) => {
+  const handleDeleteConvo = async (id: string) => {
     const { error } = await supabase.from("study_plans").delete().eq("id", id);
-    if (error) { toast.error("Failed to delete."); return; }
+    if (error) {
+      toast.error("Failed to delete.");
+      return;
+    }
     toast.success("Deleted.");
-    if (viewingBrief?.id === id) setViewingBrief(null);
-    fetchSavedBriefs();
+    fetchHistory();
   };
 
+  const handleLoadConvo = (convo: SavedConversation) => {
+    setMessages(convo.data.messages || []);
+    setShowHistory(false);
+  };
+
+  const hasMessages = messages.length > 0;
+
+  // ─── History sidebar view ───
+  if (showHistory) {
+    return (
+      <AppLayout>
+        <div className="max-w-3xl mx-auto space-y-4">
+          <div className="flex items-center gap-3">
+            <Button variant="ghost" size="sm" onClick={() => setShowHistory(false)}>
+              <ChevronLeft className="w-4 h-4 mr-1" /> Back
+            </Button>
+            <h2 className="text-lg font-semibold">Saved Research Conversations</h2>
+          </div>
+
+          {loadingHistory && (
+            <div className="flex justify-center py-8">
+              <Loader2 className="w-5 h-5 animate-spin text-muted-foreground" />
+            </div>
+          )}
+
+          {!loadingHistory && savedConvos.length === 0 && (
+            <p className="text-muted-foreground text-sm text-center py-8">No saved conversations yet.</p>
+          )}
+
+          <div className="space-y-2">
+            {savedConvos.map((c) => (
+              <div key={c.id} className="flex items-center justify-between rounded-lg border p-3 gap-3 bg-card">
+                <button
+                  className="min-w-0 flex-1 text-left"
+                  onClick={() => handleLoadConvo(c)}
+                >
+                  <p className="text-sm font-medium truncate">{c.title}</p>
+                  <p className="text-xs text-muted-foreground">
+                    {new Date(c.created_at).toLocaleDateString()} · {c.data.messages?.length || 0} messages
+                  </p>
+                </button>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-8 w-8 text-destructive shrink-0"
+                  onClick={() => handleDeleteConvo(c.id)}
+                >
+                  <Trash2 className="w-4 h-4" />
+                </Button>
+              </div>
+            ))}
+          </div>
+        </div>
+      </AppLayout>
+    );
+  }
+
+  // ─── Main chat view ───
   return (
     <AppLayout>
-      <div className="max-w-5xl mx-auto space-y-6">
-        <div className="rounded-2xl border bg-card p-6 md:p-8">
-          <div className="flex items-start gap-4">
-            <div className="w-11 h-11 rounded-xl bg-secondary text-secondary-foreground flex items-center justify-center shrink-0">
-              <BrainCircuit className="w-5 h-5" />
+      <div className="flex flex-col h-[calc(100vh-5rem)] max-w-4xl mx-auto">
+        {/* Top bar */}
+        <div className="flex items-center justify-between py-2 px-1 shrink-0">
+          <div className="flex items-center gap-2">
+            <div className="w-9 h-9 rounded-xl bg-primary/10 flex items-center justify-center">
+              <Microscope className="w-4.5 h-4.5 text-primary" />
             </div>
-            <div className="space-y-2">
-              <h1 className="text-2xl md:text-3xl font-bold">AI Research Lab</h1>
-              <p className="text-muted-foreground">
-                Build undergraduate research projects with scholarly source discovery from Google Scholar and other research indexes.
-              </p>
-              <div className="flex flex-wrap gap-2">
-                {selectedSourceLabels.map((label) => (
-                  <Badge key={label} variant="secondary">{label}</Badge>
-                ))}
-              </div>
+            <div>
+              <h1 className="text-base font-bold leading-tight">Research Assistant</h1>
+              <p className="text-xs text-muted-foreground">Ask anything · Get scholarly answers</p>
             </div>
+          </div>
+          <div className="flex items-center gap-1">
+            {hasMessages && (
+              <>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={handleSave}
+                  disabled={saving || isStreaming}
+                  className="gap-1 text-xs"
+                >
+                  {saving ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Save className="w-3.5 h-3.5" />}
+                  Save
+                </Button>
+                <Button variant="ghost" size="sm" onClick={handleNewChat} className="gap-1 text-xs">
+                  <Plus className="w-3.5 h-3.5" /> New
+                </Button>
+              </>
+            )}
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => {
+                setShowHistory(true);
+                fetchHistory();
+              }}
+              className="gap-1 text-xs"
+            >
+              <History className="w-3.5 h-3.5" />
+              History
+            </Button>
           </div>
         </div>
 
-        {/* Saved Briefs */}
-        {savedBriefs.length > 0 && (
-          <Card>
-            <CardHeader>
-              <CardTitle>Saved Research Briefs</CardTitle>
-              <CardDescription>{savedBriefs.length} saved</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-2">
-              {savedBriefs.map((brief) => (
-                <div key={brief.id} className="flex items-center justify-between rounded-lg border p-3 gap-3">
-                  <div className="min-w-0 flex-1">
-                    <p className="text-sm font-medium truncate">{brief.title}</p>
-                    <p className="text-xs text-muted-foreground">
-                      {new Date(brief.created_at).toLocaleDateString()} · {brief.data.programme} · {brief.data.level} Level
-                    </p>
-                  </div>
-                  <div className="flex items-center gap-1 shrink-0">
-                    <Button
-                      variant={viewingBrief?.id === brief.id ? "secondary" : "ghost"}
-                      size="icon"
-                      className="h-8 w-8"
-                      onClick={() => {
-                        setViewingBrief(viewingBrief?.id === brief.id ? null : brief);
-                        setResult(null);
-                      }}
-                    >
-                      <Eye className="w-4 h-4" />
-                    </Button>
-                    <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive" onClick={() => handleDelete(brief.id)}>
-                      <Trash2 className="w-4 h-4" />
-                    </Button>
-                  </div>
-                </div>
-              ))}
-            </CardContent>
-          </Card>
-        )}
-
-        {loadingSaved && (
-          <div className="flex justify-center py-4"><Loader2 className="w-5 h-5 animate-spin text-muted-foreground" /></div>
-        )}
-
-        {/* Viewing a saved brief */}
-        {viewingBrief && (
-          <>
-            <div className="flex items-center gap-2">
-              <Button variant="ghost" size="sm" onClick={() => setViewingBrief(null)}>← Back</Button>
-              <p className="text-sm text-muted-foreground">Viewing saved brief</p>
+        {/* Chat area */}
+        <div ref={scrollRef} className="flex-1 overflow-y-auto border rounded-xl bg-card mb-3">
+          {!hasMessages ? (
+            <div className="flex flex-col items-center justify-center h-full p-6 text-center">
+              <div className="w-16 h-16 rounded-2xl bg-primary/10 flex items-center justify-center mb-4">
+                <Sparkles className="w-8 h-8 text-primary" />
+              </div>
+              <h2 className="text-xl font-bold mb-1">AI Research Lab</h2>
+              <p className="text-muted-foreground text-sm mb-6 max-w-md">
+                Ask any research question, explore scholarly topics, or get help building your undergraduate project.
+              </p>
+              <div className="grid gap-2 w-full max-w-md">
+                {suggestions.map((s) => (
+                  <button
+                    key={s}
+                    onClick={() => send(s)}
+                    className="text-left text-sm rounded-lg border p-3 hover:bg-muted transition-colors"
+                  >
+                    {s}
+                  </button>
+                ))}
+              </div>
             </div>
-            <ReportView
-              report={viewingBrief.data.report}
-              programme={viewingBrief.data.programme}
-              level={viewingBrief.data.level}
+          ) : (
+            <div className="py-2">
+              {messages.map((m, i) => (
+                <ChatBubble key={i} msg={m} isLast={i === messages.length - 1} />
+              ))}
+              {isStreaming && messages[messages.length - 1]?.role !== "assistant" && <TypingIndicator />}
+            </div>
+          )}
+        </div>
+
+        {/* Input area */}
+        <div className="shrink-0 pb-2">
+          <div className="flex gap-2 items-end">
+            <Textarea
+              ref={inputRef}
+              value={input}
+              onChange={(e) => setInput(e.target.value)}
+              onKeyDown={handleKeyDown}
+              placeholder="Ask a research question…"
+              rows={1}
+              className="resize-none min-h-[44px] max-h-[120px] rounded-xl"
+              disabled={isStreaming}
             />
-          </>
-        )}
-
-        {/* New research form (hidden when viewing saved) */}
-        {!viewingBrief && (
-          <>
-            <Card>
-              <CardHeader>
-                <CardTitle>Research Setup</CardTitle>
-                <CardDescription>Describe your topic and generate a complete project brief.</CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="grid md:grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <p className="text-sm font-medium">Programme</p>
-                    <Input value={programme} onChange={(e) => setProgramme(e.target.value)} placeholder="e.g. BSc Statistics" />
-                  </div>
-                  <div className="space-y-2">
-                    <p className="text-sm font-medium">Level</p>
-                    <Select value={level} onValueChange={setLevel}>
-                      <SelectTrigger><SelectValue placeholder="Select level" /></SelectTrigger>
-                      <SelectContent>
-                        {["100", "200", "300", "400", "500"].map((v) => (
-                          <SelectItem key={v} value={v}>{v} Level</SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-                </div>
-
-                <div className="space-y-2">
-                  <p className="text-sm font-medium">Research Topic</p>
-                  <Input value={topic} onChange={(e) => setTopic(e.target.value)} placeholder="e.g. Bayesian forecasting of inflation trends in Nigeria" />
-                </div>
-
-                <div className="space-y-2">
-                  <p className="text-sm font-medium">Research Goal</p>
-                  <Textarea value={projectGoal} onChange={(e) => setProjectGoal(e.target.value)} rows={4} placeholder="What should the project deliver?" />
-                </div>
-
-                <div className="grid md:grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <p className="text-sm font-medium">Depth</p>
-                    <Select value={depth} onValueChange={setDepth}>
-                      <SelectTrigger><SelectValue placeholder="Choose depth" /></SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="quick">Quick</SelectItem>
-                        <SelectItem value="standard">Standard</SelectItem>
-                        <SelectItem value="deep">Deep</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  <div className="space-y-2">
-                    <p className="text-sm font-medium">Source Engines</p>
-                    <div className="flex flex-wrap gap-2">
-                      {sourceOptions.map((option) => (
-                        <Button key={option.value} type="button" variant={sources.includes(option.value) ? "secondary" : "outline"} size="sm" onClick={() => toggleSource(option.value)}>
-                          {option.label}
-                        </Button>
-                      ))}
-                    </div>
-                  </div>
-                </div>
-
-                <Button onClick={runResearch} disabled={loading} className="w-full">
-                  {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Sparkles className="w-4 h-4" />}
-                  Generate AI Research Brief
-                </Button>
-              </CardContent>
-            </Card>
-
-            {result?.report && (
-              <>
-                <div className="flex justify-end">
-                  <Button onClick={handleSave} disabled={saving}>
-                    {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
-                    Save Research Brief
-                  </Button>
-                </div>
-                <ReportView report={result.report} programme={programme} level={level} />
-              </>
-            )}
-          </>
-        )}
+            <Button
+              size="icon"
+              onClick={() => send()}
+              disabled={isStreaming || !input.trim()}
+              className="h-11 w-11 rounded-xl shrink-0"
+            >
+              {isStreaming ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
+            </Button>
+          </div>
+          <p className="text-[10px] text-muted-foreground text-center mt-1.5">
+            AI can make mistakes. Verify important information with your lecturer or official sources.
+          </p>
+        </div>
       </div>
     </AppLayout>
   );
