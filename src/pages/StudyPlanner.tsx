@@ -13,6 +13,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import TimetableGrid from "@/components/study-planner/TimetableGrid";
 import { downloadICS } from "@/components/study-planner/calendarExport";
+import GoogleCalendarSync from "@/components/study-planner/GoogleCalendarSync";
 import { Course, Timetable, DAYS, TIME_OPTIONS_24H, getCourseColor } from "@/components/study-planner/types";
 
 export default function StudyPlanner() {
