@@ -144,9 +144,10 @@ export default function StudyPlanner() {
               <ArrowLeft className="w-4 h-4" /> Back to settings
             </button>
             <div className="flex gap-2 flex-wrap">
+              <GoogleCalendarSync timetable={timetable} />
               <Button onClick={handleCalendarExport} variant="outline" size="sm">
                 <CalendarPlus className="w-4 h-4" />
-                Add to Calendar
+                Download .ics
               </Button>
               <Button onClick={handleSave} disabled={saving} size="sm">
                 {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
