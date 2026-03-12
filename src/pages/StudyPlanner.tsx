@@ -13,6 +13,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import TimetableGrid from "@/components/study-planner/TimetableGrid";
 import { downloadICS } from "@/components/study-planner/calendarExport";
+import GoogleCalendarSync from "@/components/study-planner/GoogleCalendarSync";
 import { Course, Timetable, DAYS, TIME_OPTIONS_24H, getCourseColor } from "@/components/study-planner/types";
 
 export default function StudyPlanner() {
@@ -143,9 +144,10 @@ export default function StudyPlanner() {
               <ArrowLeft className="w-4 h-4" /> Back to settings
             </button>
             <div className="flex gap-2 flex-wrap">
+              <GoogleCalendarSync timetable={timetable} />
               <Button onClick={handleCalendarExport} variant="outline" size="sm">
                 <CalendarPlus className="w-4 h-4" />
-                Add to Calendar
+                Download .ics
               </Button>
               <Button onClick={handleSave} disabled={saving} size="sm">
                 {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
@@ -184,8 +186,9 @@ export default function StudyPlanner() {
                 <div>
                   <p className="text-sm font-medium">Sync with your calendar</p>
                   <p className="text-xs text-muted-foreground mt-1">
-                    Click "Add to Calendar" to download an .ics file. Open it with Google Calendar, Outlook, or Apple Calendar.
-                    Each study session will be added as a weekly recurring event with a <strong>30-minute reminder</strong> before each session.
+                    <strong>Google Calendar:</strong> Click "Connect Google Calendar" to directly add events with 30-minute reminders.
+                    <br />
+                    <strong>Other calendars:</strong> Download the .ics file for Outlook, Apple Calendar, or any calendar app.
                   </p>
                 </div>
               </div>
