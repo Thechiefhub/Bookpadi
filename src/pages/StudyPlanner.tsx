@@ -186,8 +186,9 @@ export default function StudyPlanner() {
                 <div>
                   <p className="text-sm font-medium">Sync with your calendar</p>
                   <p className="text-xs text-muted-foreground mt-1">
-                    Click "Add to Calendar" to download an .ics file. Open it with Google Calendar, Outlook, or Apple Calendar.
-                    Each study session will be added as a weekly recurring event with a <strong>30-minute reminder</strong> before each session.
+                    <strong>Google Calendar:</strong> Click "Connect Google Calendar" to directly add events with 30-minute reminders.
+                    <br />
+                    <strong>Other calendars:</strong> Download the .ics file for Outlook, Apple Calendar, or any calendar app.
                   </p>
                 </div>
               </div>
