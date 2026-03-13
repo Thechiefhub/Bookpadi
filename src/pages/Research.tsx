@@ -26,8 +26,12 @@ import remarkMath from "remark-math";
 import rehypeKatex from "rehype-katex";
 import "katex/dist/katex.min.css";
 import { cn } from "@/lib/utils";
+import { processFile, buildMessageContent, type FileAttachment } from "@/components/research/fileParser";
+import FileUploadArea from "@/components/research/FileUploadArea";
 
-type Msg = { role: "user" | "assistant"; content: string };
+type MsgContent = string | any[];
+type Msg = { role: "user" | "assistant"; content: MsgContent };
+type DisplayMsg = { role: "user" | "assistant"; content: string; attachments?: FileAttachment[] };
 
 type SavedConversation = {
   id: string;
