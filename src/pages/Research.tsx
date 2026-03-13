@@ -485,10 +485,10 @@ export default function Research() {
             </div>
           ) : (
             <div className="py-2">
-              {messages.map((m, i) => (
-                <ChatBubble key={i} msg={m} isLast={i === messages.length - 1} />
+              {displayMessages.map((m, i) => (
+                <ChatBubble key={i} msg={m} isLast={i === displayMessages.length - 1} />
               ))}
-              {isStreaming && messages[messages.length - 1]?.role !== "assistant" && <TypingIndicator />}
+              {isStreaming && displayMessages[displayMessages.length - 1]?.role !== "assistant" && <TypingIndicator />}
             </div>
           )}
         </div>
