@@ -10,6 +10,7 @@ import {
   Plus,
   Save,
   Trash2,
+  FileDown,
   ChevronLeft,
   User,
   Bot,
@@ -18,6 +19,7 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
+import { exportChatToPdf } from "@/components/research/exportPdf";
 import { useAuth } from "@/hooks/useAuth";
 import ReactMarkdown from "react-markdown";
 import remarkMath from "remark-math";
@@ -354,6 +356,18 @@ export default function Research() {
           <div className="flex items-center gap-1">
             {hasMessages && (
               <>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => {
+                    exportChatToPdf(messages);
+                    toast.success("Generating PDF…");
+                  }}
+                  disabled={isStreaming}
+                  className="gap-1 text-xs"
+                >
+                  <FileDown className="w-3.5 h-3.5" /> PDF
+                </Button>
                 <Button
                   variant="ghost"
                   size="sm"
