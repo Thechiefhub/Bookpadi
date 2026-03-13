@@ -495,13 +495,19 @@ export default function Research() {
 
         {/* Input area */}
         <div className="shrink-0 pb-2">
+          <FileUploadArea
+            attachments={attachments}
+            onAdd={handleAddFiles}
+            onRemove={handleRemoveFile}
+            disabled={isStreaming || processingFiles}
+          />
           <div className="flex gap-2 items-end">
             <Textarea
               ref={inputRef}
               value={input}
               onChange={(e) => setInput(e.target.value)}
               onKeyDown={handleKeyDown}
-              placeholder="Ask a research question…"
+              placeholder={attachments.length > 0 ? "Ask about your files…" : "Ask a research question…"}
               rows={1}
               className="resize-none min-h-[44px] max-h-[120px] rounded-xl"
               disabled={isStreaming}
@@ -509,10 +515,10 @@ export default function Research() {
             <Button
               size="icon"
               onClick={() => send()}
-              disabled={isStreaming || !input.trim()}
+              disabled={isStreaming || processingFiles || (!input.trim() && attachments.length === 0)}
               className="h-11 w-11 rounded-xl shrink-0"
             >
-              {isStreaming ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
+              {isStreaming || processingFiles ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
             </Button>
           </div>
           <p className="text-[10px] text-muted-foreground text-center mt-1.5">
