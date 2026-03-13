@@ -359,6 +359,18 @@ export default function Research() {
                 <Button
                   variant="ghost"
                   size="sm"
+                  onClick={() => {
+                    exportChatToPdf(messages);
+                    toast.success("Generating PDF…");
+                  }}
+                  disabled={isStreaming}
+                  className="gap-1 text-xs"
+                >
+                  <FileDown className="w-3.5 h-3.5" /> PDF
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="sm"
                   onClick={handleSave}
                   disabled={saving || isStreaming}
                   className="gap-1 text-xs"
