@@ -422,7 +422,7 @@ export default function Research() {
                   variant="ghost"
                   size="sm"
                   onClick={() => {
-                    exportChatToPdf(messages);
+                    exportChatToPdf(displayMessages.map(m => ({ role: m.role, content: m.content })));
                     toast.success("Generating PDF…");
                   }}
                   disabled={isStreaming}
