@@ -304,21 +304,23 @@ export default function Research() {
   };
 
   const handleNewChat = () => {
-    setMessages([]);
+    setDisplayMessages([]);
+    setApiMessages([]);
+    setAttachments([]);
     setInput("");
     setShowHistory(false);
     inputRef.current?.focus();
   };
 
   const handleSave = async () => {
-    if (!user || messages.length < 2) return;
+    if (!user || displayMessages.length < 2) return;
     setSaving(true);
-    const title = messages[0].content.slice(0, 80);
+    const title = typeof displayMessages[0].content === "string" ? displayMessages[0].content.slice(0, 80) : "Research";
     const { error } = await supabase.from("study_plans").insert({
       user_id: user.id,
       title: `Research — ${title}`,
       type: "research_chat",
-      data: { messages } as any,
+      data: { messages: displayMessages.map(m => ({ role: m.role, content: m.content })) } as any,
     });
     setSaving(false);
     if (error) {
@@ -340,11 +342,13 @@ export default function Research() {
   };
 
   const handleLoadConvo = (convo: SavedConversation) => {
-    setMessages(convo.data.messages || []);
+    const msgs = convo.data.messages || [];
+    setDisplayMessages(msgs.map(m => ({ role: m.role, content: m.content as string })));
+    setApiMessages(msgs);
     setShowHistory(false);
   };
 
-  const hasMessages = messages.length > 0;
+  const hasMessages = displayMessages.length > 0;
 
   // ─── History sidebar view ───
   if (showHistory) {
