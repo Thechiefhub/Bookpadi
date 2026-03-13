@@ -56,7 +56,10 @@ $$\\int_{a}^{b} f(x)\\,dx = F(b) - F(a)$$
         },
         body: JSON.stringify({
           model: "google/gemini-2.5-flash",
-          messages: [{ role: "system", content: systemPrompt }, ...messages],
+          messages: [{ role: "system", content: systemPrompt }, ...messages.map((m: any) => ({
+            role: m.role,
+            content: m.content, // supports both string and content array (multimodal)
+          }))],
           stream: true,
         }),
       }
