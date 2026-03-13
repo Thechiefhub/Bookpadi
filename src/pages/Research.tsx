@@ -131,7 +131,7 @@ function TypingIndicator() {
   );
 }
 
-function ChatBubble({ msg, isLast }: { msg: Msg; isLast: boolean }) {
+function ChatBubble({ msg, isLast }: { msg: DisplayMsg; isLast: boolean }) {
   const isUser = msg.role === "user";
   return (
     <div className={cn("flex gap-3 px-4 py-3", isUser ? "justify-end" : "justify-start")}>
@@ -148,6 +148,21 @@ function ChatBubble({ msg, isLast }: { msg: Msg; isLast: boolean }) {
             : "bg-muted rounded-bl-md"
         )}
       >
+        {/* Attachment thumbnails */}
+        {msg.attachments && msg.attachments.length > 0 && (
+          <div className="flex gap-2 flex-wrap mb-2">
+            {msg.attachments.map((att) =>
+              att.type === "image" && att.thumbnail ? (
+                <img key={att.id} src={att.thumbnail} alt={att.name} className="w-20 h-20 rounded-lg object-cover" />
+              ) : (
+                <div key={att.id} className="flex items-center gap-1.5 rounded-md bg-background/20 px-2 py-1 text-xs">
+                  <span>📎</span>
+                  <span className="truncate max-w-[120px]">{att.name}</span>
+                </div>
+              )
+            )}
+          </div>
+        )}
         {isUser ? (
           <p className="whitespace-pre-wrap">{msg.content}</p>
         ) : (
