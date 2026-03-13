@@ -182,9 +182,12 @@ function ChatBubble({ msg, isLast }: { msg: DisplayMsg; isLast: boolean }) {
 
 export default function Research() {
   const { user } = useAuth();
-  const [messages, setMessages] = useState<Msg[]>([]);
+  const [displayMessages, setDisplayMessages] = useState<DisplayMsg[]>([]);
+  const [apiMessages, setApiMessages] = useState<Msg[]>([]);
   const [input, setInput] = useState("");
+  const [attachments, setAttachments] = useState<FileAttachment[]>([]);
   const [isStreaming, setIsStreaming] = useState(false);
+  const [processingFiles, setProcessingFiles] = useState(false);
   const [saving, setSaving] = useState(false);
   const [showHistory, setShowHistory] = useState(false);
   const [savedConvos, setSavedConvos] = useState<SavedConversation[]>([]);
@@ -200,7 +203,7 @@ export default function Research() {
 
   useEffect(() => {
     scrollToBottom();
-  }, [messages, isStreaming, scrollToBottom]);
+  }, [displayMessages, isStreaming, scrollToBottom]);
 
   const fetchHistory = useCallback(async () => {
     if (!user) return;
@@ -219,20 +222,56 @@ export default function Research() {
     fetchHistory();
   }, [fetchHistory]);
 
+  const handleAddFiles = async (files: FileList) => {
+    setProcessingFiles(true);
+    try {
+      const newAttachments: FileAttachment[] = [];
+      for (const file of Array.from(files)) {
+        const att = await processFile(file);
+        newAttachments.push(att);
+      }
+      setAttachments((prev) => [...prev, ...newAttachments]);
+    } catch (err: any) {
+      toast.error(err.message || "Failed to process file.");
+    }
+    setProcessingFiles(false);
+  };
+
+  const handleRemoveFile = (id: string) => {
+    setAttachments((prev) => prev.filter((a) => a.id !== id));
+  };
+
   const send = async (text?: string) => {
     const content = (text || input).trim();
-    if (!content || isStreaming) return;
+    if ((!content && attachments.length === 0) || isStreaming) return;
     setInput("");
+    const currentAttachments = [...attachments];
+    setAttachments([]);
 
-    const userMsg: Msg = { role: "user", content };
-    const updatedMessages = [...messages, userMsg];
-    setMessages(updatedMessages);
+    // Build display message
+    const displayMsg: DisplayMsg = { role: "user", content, attachments: currentAttachments.length > 0 ? currentAttachments : undefined };
+    const newDisplayMessages = [...displayMessages, displayMsg];
+    setDisplayMessages(newDisplayMessages);
+
+    // Build API message with multimodal content
+    const apiContent = buildMessageContent(content, currentAttachments);
+    const apiMsg: Msg = { role: "user", content: apiContent };
+    const newApiMessages = [...apiMessages, apiMsg];
+    setApiMessages(newApiMessages);
+
     setIsStreaming(true);
 
     let assistantContent = "";
     const upsert = (chunk: string) => {
       assistantContent += chunk;
-      setMessages((prev) => {
+      setDisplayMessages((prev) => {
+        const last = prev[prev.length - 1];
+        if (last?.role === "assistant") {
+          return prev.map((m, i) => (i === prev.length - 1 ? { ...m, content: assistantContent } : m));
+        }
+        return [...prev, { role: "assistant", content: assistantContent }];
+      });
+      setApiMessages((prev) => {
         const last = prev[prev.length - 1];
         if (last?.role === "assistant") {
           return prev.map((m, i) => (i === prev.length - 1 ? { ...m, content: assistantContent } : m));
@@ -243,7 +282,7 @@ export default function Research() {
 
     try {
       await streamChat({
-        messages: updatedMessages,
+        messages: newApiMessages,
         onDelta: upsert,
         onDone: () => setIsStreaming(false),
         onError: (msg) => {
