@@ -26,8 +26,12 @@ import remarkMath from "remark-math";
 import rehypeKatex from "rehype-katex";
 import "katex/dist/katex.min.css";
 import { cn } from "@/lib/utils";
+import { processFile, buildMessageContent, type FileAttachment } from "@/components/research/fileParser";
+import FileUploadArea from "@/components/research/FileUploadArea";
 
-type Msg = { role: "user" | "assistant"; content: string };
+type MsgContent = string | any[];
+type Msg = { role: "user" | "assistant"; content: MsgContent };
+type DisplayMsg = { role: "user" | "assistant"; content: string; attachments?: FileAttachment[] };
 
 type SavedConversation = {
   id: string;
@@ -127,7 +131,7 @@ function TypingIndicator() {
   );
 }
 
-function ChatBubble({ msg, isLast }: { msg: Msg; isLast: boolean }) {
+function ChatBubble({ msg, isLast }: { msg: DisplayMsg; isLast: boolean }) {
   const isUser = msg.role === "user";
   return (
     <div className={cn("flex gap-3 px-4 py-3", isUser ? "justify-end" : "justify-start")}>
@@ -144,6 +148,21 @@ function ChatBubble({ msg, isLast }: { msg: Msg; isLast: boolean }) {
             : "bg-muted rounded-bl-md"
         )}
       >
+        {/* Attachment thumbnails */}
+        {msg.attachments && msg.attachments.length > 0 && (
+          <div className="flex gap-2 flex-wrap mb-2">
+            {msg.attachments.map((att) =>
+              att.type === "image" && att.thumbnail ? (
+                <img key={att.id} src={att.thumbnail} alt={att.name} className="w-20 h-20 rounded-lg object-cover" />
+              ) : (
+                <div key={att.id} className="flex items-center gap-1.5 rounded-md bg-background/20 px-2 py-1 text-xs">
+                  <span>📎</span>
+                  <span className="truncate max-w-[120px]">{att.name}</span>
+                </div>
+              )
+            )}
+          </div>
+        )}
         {isUser ? (
           <p className="whitespace-pre-wrap">{msg.content}</p>
         ) : (
@@ -163,9 +182,12 @@ function ChatBubble({ msg, isLast }: { msg: Msg; isLast: boolean }) {
 
 export default function Research() {
   const { user } = useAuth();
-  const [messages, setMessages] = useState<Msg[]>([]);
+  const [displayMessages, setDisplayMessages] = useState<DisplayMsg[]>([]);
+  const [apiMessages, setApiMessages] = useState<Msg[]>([]);
   const [input, setInput] = useState("");
+  const [attachments, setAttachments] = useState<FileAttachment[]>([]);
   const [isStreaming, setIsStreaming] = useState(false);
+  const [processingFiles, setProcessingFiles] = useState(false);
   const [saving, setSaving] = useState(false);
   const [showHistory, setShowHistory] = useState(false);
   const [savedConvos, setSavedConvos] = useState<SavedConversation[]>([]);
@@ -181,7 +203,7 @@ export default function Research() {
 
   useEffect(() => {
     scrollToBottom();
-  }, [messages, isStreaming, scrollToBottom]);
+  }, [displayMessages, isStreaming, scrollToBottom]);
 
   const fetchHistory = useCallback(async () => {
     if (!user) return;
@@ -200,20 +222,56 @@ export default function Research() {
     fetchHistory();
   }, [fetchHistory]);
 
+  const handleAddFiles = async (files: FileList) => {
+    setProcessingFiles(true);
+    try {
+      const newAttachments: FileAttachment[] = [];
+      for (const file of Array.from(files)) {
+        const att = await processFile(file);
+        newAttachments.push(att);
+      }
+      setAttachments((prev) => [...prev, ...newAttachments]);
+    } catch (err: any) {
+      toast.error(err.message || "Failed to process file.");
+    }
+    setProcessingFiles(false);
+  };
+
+  const handleRemoveFile = (id: string) => {
+    setAttachments((prev) => prev.filter((a) => a.id !== id));
+  };
+
   const send = async (text?: string) => {
     const content = (text || input).trim();
-    if (!content || isStreaming) return;
+    if ((!content && attachments.length === 0) || isStreaming) return;
     setInput("");
+    const currentAttachments = [...attachments];
+    setAttachments([]);
 
-    const userMsg: Msg = { role: "user", content };
-    const updatedMessages = [...messages, userMsg];
-    setMessages(updatedMessages);
+    // Build display message
+    const displayMsg: DisplayMsg = { role: "user", content, attachments: currentAttachments.length > 0 ? currentAttachments : undefined };
+    const newDisplayMessages = [...displayMessages, displayMsg];
+    setDisplayMessages(newDisplayMessages);
+
+    // Build API message with multimodal content
+    const apiContent = buildMessageContent(content, currentAttachments);
+    const apiMsg: Msg = { role: "user", content: apiContent };
+    const newApiMessages = [...apiMessages, apiMsg];
+    setApiMessages(newApiMessages);
+
     setIsStreaming(true);
 
     let assistantContent = "";
     const upsert = (chunk: string) => {
       assistantContent += chunk;
-      setMessages((prev) => {
+      setDisplayMessages((prev) => {
+        const last = prev[prev.length - 1];
+        if (last?.role === "assistant") {
+          return prev.map((m, i) => (i === prev.length - 1 ? { ...m, content: assistantContent } : m));
+        }
+        return [...prev, { role: "assistant", content: assistantContent }];
+      });
+      setApiMessages((prev) => {
         const last = prev[prev.length - 1];
         if (last?.role === "assistant") {
           return prev.map((m, i) => (i === prev.length - 1 ? { ...m, content: assistantContent } : m));
@@ -224,7 +282,7 @@ export default function Research() {
 
     try {
       await streamChat({
-        messages: updatedMessages,
+        messages: newApiMessages,
         onDelta: upsert,
         onDone: () => setIsStreaming(false),
         onError: (msg) => {
@@ -246,21 +304,23 @@ export default function Research() {
   };
 
   const handleNewChat = () => {
-    setMessages([]);
+    setDisplayMessages([]);
+    setApiMessages([]);
+    setAttachments([]);
     setInput("");
     setShowHistory(false);
     inputRef.current?.focus();
   };
 
   const handleSave = async () => {
-    if (!user || messages.length < 2) return;
+    if (!user || displayMessages.length < 2) return;
     setSaving(true);
-    const title = messages[0].content.slice(0, 80);
+    const title = typeof displayMessages[0].content === "string" ? displayMessages[0].content.slice(0, 80) : "Research";
     const { error } = await supabase.from("study_plans").insert({
       user_id: user.id,
       title: `Research — ${title}`,
       type: "research_chat",
-      data: { messages } as any,
+      data: { messages: displayMessages.map(m => ({ role: m.role, content: m.content })) } as any,
     });
     setSaving(false);
     if (error) {
@@ -282,11 +342,13 @@ export default function Research() {
   };
 
   const handleLoadConvo = (convo: SavedConversation) => {
-    setMessages(convo.data.messages || []);
+    const msgs = convo.data.messages || [];
+    setDisplayMessages(msgs.map(m => ({ role: m.role, content: m.content as string })));
+    setApiMessages(msgs);
     setShowHistory(false);
   };
 
-  const hasMessages = messages.length > 0;
+  const hasMessages = displayMessages.length > 0;
 
   // ─── History sidebar view ───
   if (showHistory) {
@@ -360,7 +422,7 @@ export default function Research() {
                   variant="ghost"
                   size="sm"
                   onClick={() => {
-                    exportChatToPdf(messages);
+                    exportChatToPdf(displayMessages.map(m => ({ role: m.role, content: m.content })));
                     toast.success("Generating PDF…");
                   }}
                   disabled={isStreaming}
@@ -423,23 +485,29 @@ export default function Research() {
             </div>
           ) : (
             <div className="py-2">
-              {messages.map((m, i) => (
-                <ChatBubble key={i} msg={m} isLast={i === messages.length - 1} />
+              {displayMessages.map((m, i) => (
+                <ChatBubble key={i} msg={m} isLast={i === displayMessages.length - 1} />
               ))}
-              {isStreaming && messages[messages.length - 1]?.role !== "assistant" && <TypingIndicator />}
+              {isStreaming && displayMessages[displayMessages.length - 1]?.role !== "assistant" && <TypingIndicator />}
             </div>
           )}
         </div>
 
         {/* Input area */}
         <div className="shrink-0 pb-2">
+          <FileUploadArea
+            attachments={attachments}
+            onAdd={handleAddFiles}
+            onRemove={handleRemoveFile}
+            disabled={isStreaming || processingFiles}
+          />
           <div className="flex gap-2 items-end">
             <Textarea
               ref={inputRef}
               value={input}
               onChange={(e) => setInput(e.target.value)}
               onKeyDown={handleKeyDown}
-              placeholder="Ask a research question…"
+              placeholder={attachments.length > 0 ? "Ask about your files…" : "Ask a research question…"}
               rows={1}
               className="resize-none min-h-[44px] max-h-[120px] rounded-xl"
               disabled={isStreaming}
@@ -447,10 +515,10 @@ export default function Research() {
             <Button
               size="icon"
               onClick={() => send()}
-              disabled={isStreaming || !input.trim()}
+              disabled={isStreaming || processingFiles || (!input.trim() && attachments.length === 0)}
               className="h-11 w-11 rounded-xl shrink-0"
             >
-              {isStreaming ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
+              {isStreaming || processingFiles ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
             </Button>
           </div>
           <p className="text-[10px] text-muted-foreground text-center mt-1.5">
