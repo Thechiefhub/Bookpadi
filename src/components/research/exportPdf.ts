@@ -38,7 +38,7 @@ export async function exportChatToPdf(messages: Msg[], title?: string) {
     </div>`;
 
   const opt = {
-    margin: [12, 14, 12, 14],
+    margin: [12, 14, 12, 14] as [number, number, number, number],
     filename: `research-${Date.now()}.pdf`,
     image: { type: "jpeg", quality: 0.98 },
     html2canvas: { scale: 2, useCORS: true },
