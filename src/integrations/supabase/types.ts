@@ -14,6 +14,84 @@ export type Database = {
   }
   public: {
     Tables: {
+      assignments: {
+        Row: {
+          course_code: string | null
+          created_at: string
+          description: string | null
+          due_date: string
+          id: string
+          priority: string
+          status: string
+          title: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          course_code?: string | null
+          created_at?: string
+          description?: string | null
+          due_date: string
+          id?: string
+          priority?: string
+          status?: string
+          title: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          course_code?: string | null
+          created_at?: string
+          description?: string | null
+          due_date?: string
+          id?: string
+          priority?: string
+          status?: string
+          title?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      course_registrations: {
+        Row: {
+          course_code: string
+          course_title: string
+          created_at: string
+          id: string
+          level: number
+          semester: number
+          session: string
+          status: string
+          units: number
+          user_id: string
+        }
+        Insert: {
+          course_code: string
+          course_title: string
+          created_at?: string
+          id?: string
+          level?: number
+          semester?: number
+          session?: string
+          status?: string
+          units?: number
+          user_id: string
+        }
+        Update: {
+          course_code?: string
+          course_title?: string
+          created_at?: string
+          id?: string
+          level?: number
+          semester?: number
+          session?: string
+          status?: string
+          units?: number
+          user_id?: string
+        }
+        Relationships: []
+      }
       courses: {
         Row: {
           course_code: string
@@ -76,6 +154,45 @@ export type Database = {
           faculty?: string
           id?: string
           name?: string
+        }
+        Relationships: []
+      }
+      gpa_records: {
+        Row: {
+          course_code: string
+          course_title: string
+          created_at: string
+          grade: string
+          id: string
+          level: number
+          semester: number
+          session: string
+          units: number
+          user_id: string
+        }
+        Insert: {
+          course_code: string
+          course_title: string
+          created_at?: string
+          grade: string
+          id?: string
+          level?: number
+          semester?: number
+          session?: string
+          units?: number
+          user_id: string
+        }
+        Update: {
+          course_code?: string
+          course_title?: string
+          created_at?: string
+          grade?: string
+          id?: string
+          level?: number
+          semester?: number
+          session?: string
+          units?: number
+          user_id?: string
         }
         Relationships: []
       }
