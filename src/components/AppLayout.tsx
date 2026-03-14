@@ -2,7 +2,7 @@ import { ReactNode } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
-import { BookOpen, LayoutDashboard, Pin, Calendar, FolderOpen, Search, LogOut, Menu, X, Settings, Shield, Microscope } from "lucide-react";
+import { BookOpen, LayoutDashboard, Pin, Calendar, FolderOpen, Search, LogOut, Menu, X, Settings, Shield, Microscope, Calculator, ListTodo, BarChart3, ClipboardList } from "lucide-react";
 import { useState } from "react";
 
 const navItems = [
@@ -12,6 +12,10 @@ const navItems = [
   { to: "/planner", label: "Planner", icon: Calendar },
   { to: "/saved", label: "Saved", icon: FolderOpen },
   { to: "/research", label: "Research", icon: Microscope },
+  { to: "/gpa", label: "GPA", icon: Calculator },
+  { to: "/assignments", label: "Tasks", icon: ListTodo },
+  { to: "/progress", label: "Progress", icon: BarChart3 },
+  { to: "/registration", label: "Register", icon: ClipboardList },
   { to: "/settings", label: "Settings", icon: Settings },
 ];
 
