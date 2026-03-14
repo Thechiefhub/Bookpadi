@@ -12,6 +12,10 @@ const navItems = [
   { to: "/planner", label: "Planner", icon: Calendar },
   { to: "/saved", label: "Saved", icon: FolderOpen },
   { to: "/research", label: "Research", icon: Microscope },
+  { to: "/gpa", label: "GPA", icon: Calculator },
+  { to: "/assignments", label: "Tasks", icon: ListTodo },
+  { to: "/progress", label: "Progress", icon: BarChart3 },
+  { to: "/registration", label: "Register", icon: ClipboardList },
   { to: "/settings", label: "Settings", icon: Settings },
 ];
 
