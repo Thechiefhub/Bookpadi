@@ -22,6 +22,10 @@ import Search from "./pages/Search";
 import Settings from "./pages/Settings";
 import Admin from "./pages/Admin";
 import Research from "./pages/Research";
+import GpaCalculator from "./pages/GpaCalculator";
+import Assignments from "./pages/Assignments";
+import SemesterProgress from "./pages/SemesterProgress";
+import CourseRegistration from "./pages/CourseRegistration";
 import NotFound from "./pages/NotFound";
 import { Loader2 } from "lucide-react";
 
