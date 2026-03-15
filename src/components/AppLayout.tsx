@@ -16,6 +16,10 @@ const navItems = [
   { to: "/assignments", label: "Tasks", icon: ListTodo },
   { to: "/progress", label: "Progress", icon: BarChart3 },
   { to: "/registration", label: "Register", icon: ClipboardList },
+  { to: "/flashcards", label: "Flashcards", icon: Layers },
+  { to: "/essay-review", label: "Essay AI", icon: FileText },
+  { to: "/weak-areas", label: "Weak Areas", icon: Brain },
+  { to: "/voice-notes", label: "Voice", icon: Mic },
   { to: "/settings", label: "Settings", icon: Settings },
 ];
 

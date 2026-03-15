@@ -124,6 +124,10 @@ function AppRoutes() {
       <Route path="/assignments" element={<ProtectedRoute><Assignments /></ProtectedRoute>} />
       <Route path="/progress" element={<ProtectedRoute><SemesterProgress /></ProtectedRoute>} />
       <Route path="/registration" element={<ProtectedRoute><CourseRegistration /></ProtectedRoute>} />
+      <Route path="/flashcards" element={<ProtectedRoute><Flashcards /></ProtectedRoute>} />
+      <Route path="/essay-review" element={<ProtectedRoute><EssayReviewer /></ProtectedRoute>} />
+      <Route path="/weak-areas" element={<ProtectedRoute><WeakAreaAnalysis /></ProtectedRoute>} />
+      <Route path="/voice-notes" element={<ProtectedRoute><VoiceNotes /></ProtectedRoute>} />
       <Route path="/admin" element={<AdminRoute><Admin /></AdminRoute>} />
       <Route path="*" element={<NotFound />} />
     </Routes>
