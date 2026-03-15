@@ -2,7 +2,7 @@ import { ReactNode } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
-import { BookOpen, LayoutDashboard, Pin, Calendar, FolderOpen, Search, LogOut, Menu, X, Settings, Shield, Microscope, Calculator, ListTodo, BarChart3, ClipboardList } from "lucide-react";
+import { BookOpen, LayoutDashboard, Pin, Calendar, FolderOpen, Search, LogOut, Menu, X, Settings, Shield, Microscope, Calculator, ListTodo, BarChart3, ClipboardList, Layers, FileText, Brain, Mic } from "lucide-react";
 import { useState } from "react";
 
 const navItems = [
