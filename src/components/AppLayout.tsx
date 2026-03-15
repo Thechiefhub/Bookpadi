@@ -2,7 +2,7 @@ import { ReactNode } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
-import { BookOpen, LayoutDashboard, Pin, Calendar, FolderOpen, Search, LogOut, Menu, X, Settings, Shield, Microscope, Calculator, ListTodo, BarChart3, ClipboardList } from "lucide-react";
+import { BookOpen, LayoutDashboard, Pin, Calendar, FolderOpen, Search, LogOut, Menu, X, Settings, Shield, Microscope, Calculator, ListTodo, BarChart3, ClipboardList, Layers, FileText, Brain, Mic } from "lucide-react";
 import { useState } from "react";
 
 const navItems = [
@@ -16,6 +16,10 @@ const navItems = [
   { to: "/assignments", label: "Tasks", icon: ListTodo },
   { to: "/progress", label: "Progress", icon: BarChart3 },
   { to: "/registration", label: "Register", icon: ClipboardList },
+  { to: "/flashcards", label: "Flashcards", icon: Layers },
+  { to: "/essay-review", label: "Essay AI", icon: FileText },
+  { to: "/weak-areas", label: "Weak Areas", icon: Brain },
+  { to: "/voice-notes", label: "Voice", icon: Mic },
   { to: "/settings", label: "Settings", icon: Settings },
 ];
 
