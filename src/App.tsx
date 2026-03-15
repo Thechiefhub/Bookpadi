@@ -26,6 +26,10 @@ import GpaCalculator from "./pages/GpaCalculator";
 import Assignments from "./pages/Assignments";
 import SemesterProgress from "./pages/SemesterProgress";
 import CourseRegistration from "./pages/CourseRegistration";
+import Flashcards from "./pages/Flashcards";
+import EssayReviewer from "./pages/EssayReviewer";
+import WeakAreaAnalysis from "./pages/WeakAreaAnalysis";
+import VoiceNotes from "./pages/VoiceNotes";
 import NotFound from "./pages/NotFound";
 import { Loader2 } from "lucide-react";
 
