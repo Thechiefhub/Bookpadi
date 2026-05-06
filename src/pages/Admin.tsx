@@ -352,6 +352,101 @@ export default function Admin() {
     else { toast({ title: "Topic updated" }); cancelEditTopic(); fetchData(); }
   };
 
+  // --- File extraction for course material (PDF / DOCX / TXT) ---
+  const extractCourseFileText = async (file: File): Promise<string> => {
+    const name = file.name.toLowerCase();
+    if (name.endsWith(".pdf")) {
+      return await extractTextFromPdf(file);
+    }
+    if (name.endsWith(".docx")) {
+      const mammoth = await import("mammoth");
+      const buffer = await file.arrayBuffer();
+      const result = await mammoth.extractRawText({ arrayBuffer: buffer });
+      return result.value || "";
+    }
+    if (name.endsWith(".txt") || name.endsWith(".md") || file.type.startsWith("text/")) {
+      return await file.text();
+    }
+    throw new Error("Unsupported file. Please upload PDF, DOCX, or TXT.");
+  };
+
+  const handleCourseFileSelect = async (file: File | null) => {
+    setCourseFile(file);
+    setExtractedFileText("");
+    if (!file) return;
+    if (file.size > 20 * 1024 * 1024) {
+      toast({ title: "File too large", description: "Maximum 20MB.", variant: "destructive" });
+      setCourseFile(null);
+      return;
+    }
+    setExtractingFile(true);
+    try {
+      const text = await extractCourseFileText(file);
+      setExtractedFileText(text);
+      toast({ title: "File ready", description: `Extracted ${text.length.toLocaleString()} characters.` });
+    } catch (err: any) {
+      toast({ title: "Extraction error", description: err.message, variant: "destructive" });
+      setCourseFile(null);
+    }
+    setExtractingFile(false);
+  };
+
+  const generateAIDescription = async () => {
+    if (!newCourse.course_code.trim() || !newCourse.title.trim()) {
+      toast({ title: "Need course code & title first", variant: "destructive" });
+      return;
+    }
+    setGeneratingDesc(true);
+    const { data, error } = await supabase.functions.invoke("generate-course-description", {
+      body: {
+        courseCode: newCourse.course_code.trim(),
+        courseTitle: newCourse.title.trim(),
+        fileText: extractedFileText || "",
+      },
+    });
+    setGeneratingDesc(false);
+    if (error || data?.error) {
+      toast({ title: "AI error", description: error?.message || data?.error, variant: "destructive" });
+      return;
+    }
+    if (data?.description) {
+      setNewCourse((c) => ({ ...c, description: data.description }));
+      toast({ title: "AI description generated" });
+    }
+  };
+
+  const resetNewCourse = () => {
+    setNewCourse({ course_code: "", title: "", description: "", level: 100, semester: 1, units: 2, department_id: "" });
+    setCourseFile(null);
+    setExtractedFileText("");
+  };
+
+  // --- Backfill description for an existing course ---
+  const backfillDescription = async (course: Course) => {
+    setBackfillingId(course.id);
+    const { data, error } = await supabase.functions.invoke("generate-course-description", {
+      body: { courseCode: course.course_code, courseTitle: course.title, fileText: "" },
+    });
+    if (error || data?.error) {
+      toast({ title: "AI error", description: error?.message || data?.error, variant: "destructive" });
+      setBackfillingId(null);
+      return;
+    }
+    if (data?.description) {
+      const { error: upErr } = await supabase
+        .from("courses")
+        .update({ description: data.description })
+        .eq("id", course.id);
+      if (upErr) {
+        toast({ title: "Save error", description: upErr.message, variant: "destructive" });
+      } else {
+        toast({ title: `Description added for ${course.course_code}` });
+        fetchData();
+      }
+    }
+    setBackfillingId(null);
+  };
+
   // --- Create course ---
   const handleCreateCourse = async () => {
     if (!newCourse.course_code.trim() || !newCourse.title.trim() || !newCourse.department_id) {
@@ -359,10 +454,26 @@ export default function Admin() {
       return;
     }
     setCreatingCourse(true);
+    let description = newCourse.description.trim();
+    // Auto-generate description if none and file/title exists
+    if (!description) {
+      try {
+        const { data } = await supabase.functions.invoke("generate-course-description", {
+          body: {
+            courseCode: newCourse.course_code.trim(),
+            courseTitle: newCourse.title.trim(),
+            fileText: extractedFileText || "",
+          },
+        });
+        if (data?.description) description = data.description;
+      } catch (e) {
+        // continue without description
+      }
+    }
     const { error } = await supabase.from("courses").insert({
       course_code: newCourse.course_code.trim(),
       title: newCourse.title.trim(),
-      description: newCourse.description.trim() || null,
+      description: description || null,
       level: newCourse.level,
       semester: newCourse.semester,
       units: newCourse.units,
@@ -372,9 +483,9 @@ export default function Admin() {
     if (error) {
       toast({ title: "Error creating course", description: error.message, variant: "destructive" });
     } else {
-      toast({ title: "Course created" });
+      toast({ title: "Course created", description: "Synced to department automatically." });
       setShowCreateCourse(false);
-      setNewCourse({ course_code: "", title: "", description: "", level: 100, semester: 1, units: 2, department_id: "" });
+      resetNewCourse();
       fetchData();
     }
   };
