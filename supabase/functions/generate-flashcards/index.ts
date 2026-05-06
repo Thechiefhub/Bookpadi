@@ -35,7 +35,9 @@ Guidelines:
 - Mix question types: definitions, explanations, comparisons, applications
 - Keep fronts concise (1-2 sentences)
 - Keep backs thorough but focused (2-4 sentences)
-- Use exam-relevant language`
+- Use exam-relevant language
+
+CRITICAL MATH FORMATTING RULE: Never use LaTeX or KaTeX (no $, $$, \\frac, \\sqrt, etc.). Write ALL math in plain text using ^ for powers, * for multiplication, / for division, sqrt() for roots. Plain solving only.`
           },
           {
             role: "user",

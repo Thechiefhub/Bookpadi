@@ -32,3 +32,6 @@ verify_jwt = false
 
 [functions.analyze-weak-areas]
 verify_jwt = false
+
+[functions.generate-course-description]
+verify_jwt = false

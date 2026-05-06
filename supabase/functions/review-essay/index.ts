@@ -29,7 +29,9 @@ Then provide:
 - **Model Answer Outline**: Brief outline of what an A-grade answer would include
 - **Final Verdict**: One paragraph summary
 
-Use markdown formatting. Be encouraging but honest. Grade like a real Nigerian university lecturer would.`;
+Use markdown formatting. Be encouraging but honest. Grade like a real Nigerian university lecturer would.
+
+CRITICAL MATH FORMATTING RULE: Never use LaTeX or KaTeX syntax. Do NOT use $, $$, \\(, \\), \\[, \\], \\frac, \\sqrt, \\sum, \\int, etc. Write ALL mathematics in plain text using: ^ for powers, * for multiplication, / for division, sqrt() for roots, and standard words/symbols. Solutions must be plain numbered steps.`;
 
     const userPrompt = `Please review and grade this essay/answer:
 
