@@ -112,6 +112,11 @@ export default function Admin() {
     course_code: "", title: "", description: "", level: 100, semester: 1, units: 2, department_id: "",
   });
   const [creatingCourse, setCreatingCourse] = useState(false);
+  const [courseFile, setCourseFile] = useState<File | null>(null);
+  const [extractedFileText, setExtractedFileText] = useState<string>("");
+  const [extractingFile, setExtractingFile] = useState(false);
+  const [generatingDesc, setGeneratingDesc] = useState(false);
+  const [backfillingId, setBackfillingId] = useState<string | null>(null);
 
   // Create topic dialog
   const [showCreateTopic, setShowCreateTopic] = useState(false);
