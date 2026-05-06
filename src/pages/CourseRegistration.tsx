@@ -11,7 +11,8 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Label } from "@/components/ui/label";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { toast } from "@/hooks/use-toast";
-import { ClipboardList, Plus, Trash2, BookOpen, AlertCircle, Loader2 } from "lucide-react";
+import { ClipboardList, Plus, Trash2, BookOpen, AlertCircle, Loader2, Info } from "lucide-react";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 
 interface CourseReg {
   id: string;
@@ -119,7 +120,11 @@ export default function CourseRegistration() {
   const totalUnits = filtered.filter((r) => r.status !== "dropped").reduce((s, r) => s + r.units, 0);
   const unitsExceeded = totalUnits > MAX_UNITS;
 
-  const alreadyRegistered = new Set(registrations.map((r) => r.course_code));
+  const alreadyRegistered = new Set(
+    registrations
+      .filter((r) => r.session === selectedSession && r.semester === parseInt(selectedSemester))
+      .map((r) => r.course_code)
+  );
   const unregisteredCourses = availableCourses.filter(
     (c) => !alreadyRegistered.has(c.course_code) && c.semester === parseInt(selectedSemester)
   );
@@ -305,17 +310,34 @@ export default function CourseRegistration() {
             <CardContent>
               <div className="grid gap-2 md:grid-cols-2">
                 {unregisteredCourses.map((c: any) => (
-                  <button
+                  <div
                     key={c.id}
-                    onClick={() => addFromCatalog(c)}
-                    className="flex items-center justify-between p-3 rounded-lg border bg-card hover:bg-muted/50 transition-colors text-left w-full"
+                    className="flex items-start justify-between p-3 rounded-lg border bg-card hover:bg-muted/50 transition-colors gap-2"
                   >
-                    <div className="min-w-0">
-                      <p className="font-mono text-sm font-medium">{c.course_code}</p>
-                      <p className="text-xs text-muted-foreground truncate">{c.title}</p>
-                    </div>
-                    <Badge variant="outline">{c.units}u</Badge>
-                  </button>
+                    <button onClick={() => addFromCatalog(c)} className="flex-1 text-left min-w-0">
+                      <div className="flex items-center gap-2">
+                        <p className="font-mono text-sm font-medium">{c.course_code}</p>
+                        <Badge variant="outline" className="text-[10px]">{c.units}u</Badge>
+                      </div>
+                      <p className="text-xs text-muted-foreground truncate mt-0.5">{c.title}</p>
+                      {c.description && (
+                        <p className="text-[11px] text-muted-foreground/80 line-clamp-2 mt-1">{c.description}</p>
+                      )}
+                    </button>
+                    {c.description && (
+                      <Popover>
+                        <PopoverTrigger asChild>
+                          <Button size="icon" variant="ghost" className="h-7 w-7 shrink-0" onClick={(e) => e.stopPropagation()}>
+                            <Info className="w-3.5 h-3.5" />
+                          </Button>
+                        </PopoverTrigger>
+                        <PopoverContent className="w-72 text-xs">
+                          <p className="font-medium mb-1">{c.course_code} — {c.title}</p>
+                          <p className="text-muted-foreground whitespace-pre-wrap">{c.description}</p>
+                        </PopoverContent>
+                      </Popover>
+                    )}
+                  </div>
                 ))}
               </div>
             </CardContent>
