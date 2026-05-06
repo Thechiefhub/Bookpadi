@@ -18,6 +18,8 @@ serve(async (req) => {
     let systemPrompt: string;
     let userPrompt: string;
 
+    const MATH_RULE = `\n\nCRITICAL MATH FORMATTING RULE: Never use LaTeX or KaTeX syntax. Do NOT use $, $$, \\(, \\), \\[, \\], \\frac, \\sqrt, \\sum, \\int, etc. Write ALL mathematics in plain text using: ^ for powers (x^2), * for multiplication, / for division, sqrt() for roots, and standard symbols. Show every solution step-by-step in plain numbered steps the student can read directly. No rendered math — plain solving only.`;
+
     if (questions) {
       // Answer mode — user is asking for answers to previously generated questions
       if (mode === "quiz") {
@@ -105,7 +107,7 @@ Create exam-style questions that thoroughly cover these topics.`;
       body: JSON.stringify({
         model: "google/gemini-3-flash-preview",
         messages: [
-          { role: "system", content: systemPrompt },
+          { role: "system", content: systemPrompt + MATH_RULE },
           { role: "user", content: userPrompt },
         ],
         stream: true,

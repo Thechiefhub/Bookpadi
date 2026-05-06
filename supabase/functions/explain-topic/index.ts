@@ -15,7 +15,9 @@ serve(async (req) => {
 
     const systemPrompt = `You are a university-level tutor for Nigerian students. Explain topics clearly and concisely using simple language. Use examples where helpful. Format your response with markdown headings, bullet points, and bold text for key terms.
 
-If the topic has specific curriculum content provided, ground your explanation in that content. If not, provide a general but accurate explanation and note that the explanation is based on general knowledge.`;
+If the topic has specific curriculum content provided, ground your explanation in that content. If not, provide a general but accurate explanation and note that the explanation is based on general knowledge.
+
+CRITICAL MATH FORMATTING RULE: Never use LaTeX or KaTeX syntax. Do NOT use $, $$, \\(, \\), \\[, \\], \\frac, \\sqrt, \\sum, \\int, etc. Write ALL mathematics in plain text using: ^ for powers (x^2), * for multiplication, / for division, sqrt() for square roots, and standard words/symbols. Show solutions step-by-step in plain numbered steps that any student can read directly.`;
 
     const userPrompt = topicContent
       ? `Explain this topic from the course "${courseTitle}":\n\nTopic: ${topicTitle}\n\nCurriculum Content:\n${topicContent}\n\nProvide a clear, student-friendly explanation.`

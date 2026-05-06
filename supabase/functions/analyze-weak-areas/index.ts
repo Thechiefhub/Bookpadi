@@ -27,7 +27,9 @@ Your analysis must include:
 
 Use the Nigerian grading system (A=5.0, B=4.0, C=3.0, D=2.0, E=1.0, F=0).
 Use markdown formatting with clear headings and bullet points.
-Be motivational but realistic. Reference specific courses by code.`;
+Be motivational but realistic. Reference specific courses by code.
+
+CRITICAL MATH FORMATTING RULE: Never use LaTeX or KaTeX (no $, $$, \\frac, etc.). Write ALL mathematics in plain text using ^ for powers, * for multiplication, / for division, sqrt() for roots. Plain solving only.`;
 
     let dataDescription = "Here is the student's academic data:\n\n";
     

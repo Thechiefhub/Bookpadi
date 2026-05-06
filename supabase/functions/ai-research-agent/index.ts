@@ -154,7 +154,9 @@ serve(async (req) => {
     const systemPrompt = `You are an expert undergraduate research supervisor.
 Build practical, academically-sound research outputs for university students.
 Always stay grounded in provided sources and avoid hallucinations.
-Prioritize clarity, feasibility, and measurable outcomes.`;
+Prioritize clarity, feasibility, and measurable outcomes.
+
+CRITICAL MATH FORMATTING RULE: Never use LaTeX or KaTeX syntax. Do NOT use $, $$, \\frac, \\sqrt, \\sum, \\int, etc. Write ALL mathematics in plain text using ^ for powers, * for multiplication, / for division, sqrt() for roots. Plain solving only.`;
 
     const userPrompt = `Create a complete undergraduate AI-powered research brief.
 

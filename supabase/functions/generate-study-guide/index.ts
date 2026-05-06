@@ -25,7 +25,9 @@ Structure the study guide as follows:
 5. **Study Tips** — Specific advice for mastering this course
 6. **Recommended Study Order** — Suggest the best sequence to study the topics
 
-Be thorough but concise. Focus on what students need to know for exams.`;
+Be thorough but concise. Focus on what students need to know for exams.
+
+CRITICAL MATH FORMATTING RULE: Never use LaTeX or KaTeX syntax. Do NOT use $, $$, \\(, \\), \\[, \\], \\frac, \\sqrt, \\sum, \\int, etc. Write ALL mathematics in plain text using: ^ for powers (x^2), * for multiplication, / for division, sqrt() for roots. Show every solution as plain numbered steps the student can read directly.`;
 
     const userPrompt = `Generate a comprehensive study guide for:
 

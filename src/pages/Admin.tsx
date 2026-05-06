@@ -112,6 +112,11 @@ export default function Admin() {
     course_code: "", title: "", description: "", level: 100, semester: 1, units: 2, department_id: "",
   });
   const [creatingCourse, setCreatingCourse] = useState(false);
+  const [courseFile, setCourseFile] = useState<File | null>(null);
+  const [extractedFileText, setExtractedFileText] = useState<string>("");
+  const [extractingFile, setExtractingFile] = useState(false);
+  const [generatingDesc, setGeneratingDesc] = useState(false);
+  const [backfillingId, setBackfillingId] = useState<string | null>(null);
 
   // Create topic dialog
   const [showCreateTopic, setShowCreateTopic] = useState(false);
@@ -347,6 +352,101 @@ export default function Admin() {
     else { toast({ title: "Topic updated" }); cancelEditTopic(); fetchData(); }
   };
 
+  // --- File extraction for course material (PDF / DOCX / TXT) ---
+  const extractCourseFileText = async (file: File): Promise<string> => {
+    const name = file.name.toLowerCase();
+    if (name.endsWith(".pdf")) {
+      return await extractTextFromPdf(file);
+    }
+    if (name.endsWith(".docx")) {
+      const mammoth = await import("mammoth");
+      const buffer = await file.arrayBuffer();
+      const result = await mammoth.extractRawText({ arrayBuffer: buffer });
+      return result.value || "";
+    }
+    if (name.endsWith(".txt") || name.endsWith(".md") || file.type.startsWith("text/")) {
+      return await file.text();
+    }
+    throw new Error("Unsupported file. Please upload PDF, DOCX, or TXT.");
+  };
+
+  const handleCourseFileSelect = async (file: File | null) => {
+    setCourseFile(file);
+    setExtractedFileText("");
+    if (!file) return;
+    if (file.size > 20 * 1024 * 1024) {
+      toast({ title: "File too large", description: "Maximum 20MB.", variant: "destructive" });
+      setCourseFile(null);
+      return;
+    }
+    setExtractingFile(true);
+    try {
+      const text = await extractCourseFileText(file);
+      setExtractedFileText(text);
+      toast({ title: "File ready", description: `Extracted ${text.length.toLocaleString()} characters.` });
+    } catch (err: any) {
+      toast({ title: "Extraction error", description: err.message, variant: "destructive" });
+      setCourseFile(null);
+    }
+    setExtractingFile(false);
+  };
+
+  const generateAIDescription = async () => {
+    if (!newCourse.course_code.trim() || !newCourse.title.trim()) {
+      toast({ title: "Need course code & title first", variant: "destructive" });
+      return;
+    }
+    setGeneratingDesc(true);
+    const { data, error } = await supabase.functions.invoke("generate-course-description", {
+      body: {
+        courseCode: newCourse.course_code.trim(),
+        courseTitle: newCourse.title.trim(),
+        fileText: extractedFileText || "",
+      },
+    });
+    setGeneratingDesc(false);
+    if (error || data?.error) {
+      toast({ title: "AI error", description: error?.message || data?.error, variant: "destructive" });
+      return;
+    }
+    if (data?.description) {
+      setNewCourse((c) => ({ ...c, description: data.description }));
+      toast({ title: "AI description generated" });
+    }
+  };
+
+  const resetNewCourse = () => {
+    setNewCourse({ course_code: "", title: "", description: "", level: 100, semester: 1, units: 2, department_id: "" });
+    setCourseFile(null);
+    setExtractedFileText("");
+  };
+
+  // --- Backfill description for an existing course ---
+  const backfillDescription = async (course: Course) => {
+    setBackfillingId(course.id);
+    const { data, error } = await supabase.functions.invoke("generate-course-description", {
+      body: { courseCode: course.course_code, courseTitle: course.title, fileText: "" },
+    });
+    if (error || data?.error) {
+      toast({ title: "AI error", description: error?.message || data?.error, variant: "destructive" });
+      setBackfillingId(null);
+      return;
+    }
+    if (data?.description) {
+      const { error: upErr } = await supabase
+        .from("courses")
+        .update({ description: data.description })
+        .eq("id", course.id);
+      if (upErr) {
+        toast({ title: "Save error", description: upErr.message, variant: "destructive" });
+      } else {
+        toast({ title: `Description added for ${course.course_code}` });
+        fetchData();
+      }
+    }
+    setBackfillingId(null);
+  };
+
   // --- Create course ---
   const handleCreateCourse = async () => {
     if (!newCourse.course_code.trim() || !newCourse.title.trim() || !newCourse.department_id) {
@@ -354,10 +454,26 @@ export default function Admin() {
       return;
     }
     setCreatingCourse(true);
+    let description = newCourse.description.trim();
+    // Auto-generate description if none and file/title exists
+    if (!description) {
+      try {
+        const { data } = await supabase.functions.invoke("generate-course-description", {
+          body: {
+            courseCode: newCourse.course_code.trim(),
+            courseTitle: newCourse.title.trim(),
+            fileText: extractedFileText || "",
+          },
+        });
+        if (data?.description) description = data.description;
+      } catch (e) {
+        // continue without description
+      }
+    }
     const { error } = await supabase.from("courses").insert({
       course_code: newCourse.course_code.trim(),
       title: newCourse.title.trim(),
-      description: newCourse.description.trim() || null,
+      description: description || null,
       level: newCourse.level,
       semester: newCourse.semester,
       units: newCourse.units,
@@ -367,9 +483,9 @@ export default function Admin() {
     if (error) {
       toast({ title: "Error creating course", description: error.message, variant: "destructive" });
     } else {
-      toast({ title: "Course created" });
+      toast({ title: "Course created", description: "Synced to department automatically." });
       setShowCreateCourse(false);
-      setNewCourse({ course_code: "", title: "", description: "", level: 100, semester: 1, units: 2, department_id: "" });
+      resetNewCourse();
       fetchData();
     }
   };
@@ -702,10 +818,10 @@ export default function Admin() {
                 <DialogTrigger asChild>
                   <Button size="sm" variant="outline"><Plus className="w-3.5 h-3.5 mr-1" /> New Course</Button>
                 </DialogTrigger>
-                <DialogContent>
+                <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
                   <DialogHeader>
                     <DialogTitle>Create Course</DialogTitle>
-                    <DialogDescription>Add a new course manually.</DialogDescription>
+                    <DialogDescription>Add a course manually. Optionally upload course material — AI will write a student-friendly description.</DialogDescription>
                   </DialogHeader>
                   <div className="space-y-3">
                     <div>
@@ -731,10 +847,54 @@ export default function Admin() {
                       <Label className="text-xs">Title</Label>
                       <Input value={newCourse.title} onChange={(e) => setNewCourse({ ...newCourse, title: e.target.value })} placeholder="Introduction to Computer Science" className="mt-1" maxLength={200} />
                     </div>
-                    <div>
-                      <Label className="text-xs">Description (optional)</Label>
-                      <Textarea value={newCourse.description} onChange={(e) => setNewCourse({ ...newCourse, description: e.target.value })} placeholder="Brief description…" className="mt-1" rows={2} maxLength={500} />
+
+                    <div className="rounded-lg border border-dashed p-3 space-y-2 bg-muted/30">
+                      <Label className="text-xs flex items-center gap-1.5">
+                        <Upload className="w-3.5 h-3.5" /> Course Material (PDF / Word / TXT)
+                      </Label>
+                      <Input
+                        type="file"
+                        accept=".pdf,.docx,.txt,.md,application/pdf,text/plain"
+                        onChange={(e) => handleCourseFileSelect(e.target.files?.[0] || null)}
+                        className="text-xs h-9"
+                      />
+                      {extractingFile && (
+                        <p className="text-xs text-muted-foreground flex items-center gap-1">
+                          <Loader2 className="w-3 h-3 animate-spin" /> Extracting text…
+                        </p>
+                      )}
+                      {courseFile && !extractingFile && (
+                        <p className="text-xs text-muted-foreground truncate">
+                          ✓ {courseFile.name} ({extractedFileText.length.toLocaleString()} chars)
+                        </p>
+                      )}
                     </div>
+
+                    <div>
+                      <div className="flex items-center justify-between">
+                        <Label className="text-xs">AI Description</Label>
+                        <Button
+                          type="button"
+                          size="sm"
+                          variant="ghost"
+                          className="h-7 text-xs gap-1"
+                          onClick={generateAIDescription}
+                          disabled={generatingDesc || !newCourse.course_code || !newCourse.title}
+                        >
+                          {generatingDesc ? <Loader2 className="w-3 h-3 animate-spin" /> : "✨"}
+                          {generatingDesc ? "Generating…" : "Generate with AI"}
+                        </Button>
+                      </div>
+                      <Textarea
+                        value={newCourse.description}
+                        onChange={(e) => setNewCourse({ ...newCourse, description: e.target.value })}
+                        placeholder="Click 'Generate with AI' or type your own. If left blank, AI will write one on save."
+                        className="mt-1"
+                        rows={5}
+                        maxLength={2000}
+                      />
+                    </div>
+
                     <div className="grid grid-cols-2 gap-3">
                       <div>
                         <Label className="text-xs">Level</Label>
@@ -758,10 +918,10 @@ export default function Admin() {
                     </div>
                   </div>
                   <DialogFooter>
-                    <Button variant="outline" onClick={() => setShowCreateCourse(false)}>Cancel</Button>
-                    <Button onClick={handleCreateCourse} disabled={creatingCourse}>
+                    <Button variant="outline" onClick={() => { setShowCreateCourse(false); resetNewCourse(); }}>Cancel</Button>
+                    <Button onClick={handleCreateCourse} disabled={creatingCourse || generatingDesc}>
                       {creatingCourse ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Plus className="w-4 h-4 mr-2" />}
-                      Create
+                      Create & Sync
                     </Button>
                   </DialogFooter>
                 </DialogContent>
@@ -885,6 +1045,16 @@ export default function Admin() {
                               </div>
                             ) : (
                               <div className="flex justify-end gap-1">
+                                <Button
+                                  size="icon"
+                                  variant="ghost"
+                                  className="h-8 w-8"
+                                  title={course.description ? "Regenerate AI description" : "Generate AI description"}
+                                  onClick={() => backfillDescription(course)}
+                                  disabled={backfillingId === course.id}
+                                >
+                                  {backfillingId === course.id ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <span className="text-sm">✨</span>}
+                                </Button>
                                 <Button size="icon" variant="ghost" className="h-8 w-8" onClick={() => startEditCourse(course)}><Pencil className="w-3.5 h-3.5" /></Button>
                                 <Button size="icon" variant="ghost" className="h-8 w-8 text-destructive hover:text-destructive" onClick={() => setDeleteConfirm({ type: "course", id: course.id, label: course.course_code })}><Trash2 className="w-3.5 h-3.5" /></Button>
                               </div>

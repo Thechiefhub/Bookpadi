@@ -43,8 +43,11 @@ Rules:
 - semester is 1 or 2
 - units is typically 1-6
 - Each course can have multiple topics (the syllabus/content outline)
+- For EACH course, write a concise 3-4 sentence student-friendly "description" of what the course is about and what students will learn. Plain prose.
 - If you can't determine a field, use reasonable defaults
-- Sort topics in logical order (sort_order starting from 1)`
+- Sort topics in logical order (sort_order starting from 1)
+
+CRITICAL MATH FORMATTING RULE: Never use LaTeX or KaTeX (no $, $$, \\frac, \\sqrt, etc.). Write all math in plain text using ^ for powers, * for multiplication, / for division, sqrt() for roots.`
           },
           {
             role: "user",
@@ -67,7 +70,7 @@ Rules:
                       properties: {
                         course_code: { type: "string", description: "e.g. CSC 101" },
                         title: { type: "string" },
-                        description: { type: "string" },
+                        description: { type: "string", description: "3-4 sentence student-friendly course description" },
                         level: { type: "number", enum: [100, 200, 300, 400, 500] },
                         semester: { type: "number", enum: [1, 2] },
                         units: { type: "number" },
@@ -85,7 +88,7 @@ Rules:
                           }
                         }
                       },
-                      required: ["course_code", "title", "level", "semester", "units", "topics"],
+                      required: ["course_code", "title", "description", "level", "semester", "units", "topics"],
                       additionalProperties: false
                     }
                   }
