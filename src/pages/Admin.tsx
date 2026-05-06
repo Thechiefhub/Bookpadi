@@ -1045,6 +1045,16 @@ export default function Admin() {
                               </div>
                             ) : (
                               <div className="flex justify-end gap-1">
+                                <Button
+                                  size="icon"
+                                  variant="ghost"
+                                  className="h-8 w-8"
+                                  title={course.description ? "Regenerate AI description" : "Generate AI description"}
+                                  onClick={() => backfillDescription(course)}
+                                  disabled={backfillingId === course.id}
+                                >
+                                  {backfillingId === course.id ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <span className="text-sm">✨</span>}
+                                </Button>
                                 <Button size="icon" variant="ghost" className="h-8 w-8" onClick={() => startEditCourse(course)}><Pencil className="w-3.5 h-3.5" /></Button>
                                 <Button size="icon" variant="ghost" className="h-8 w-8 text-destructive hover:text-destructive" onClick={() => setDeleteConfirm({ type: "course", id: course.id, label: course.course_code })}><Trash2 className="w-3.5 h-3.5" /></Button>
                               </div>
