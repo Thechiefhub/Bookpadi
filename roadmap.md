@@ -1,0 +1,4 @@
+- [ ] Verify and finish the previously requested admin course upload/AI descriptions, semester organization, student-added courses, and plain-text maths output.
+- [ ] Refresh homepage with a distinct youth-focused color direction and surface the new learning features.
+- [ ] Add school-scoped student search and messaging to the dashboard.
+- [ ] Add unique usernames to signup with availability feedback and persistence.
