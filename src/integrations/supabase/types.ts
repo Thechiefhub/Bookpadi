@@ -157,6 +157,33 @@ export type Database = {
         }
         Relationships: []
       }
+      direct_messages: {
+        Row: {
+          body: string
+          created_at: string
+          id: string
+          read_at: string | null
+          recipient_id: string
+          sender_id: string
+        }
+        Insert: {
+          body: string
+          created_at?: string
+          id?: string
+          read_at?: string | null
+          recipient_id: string
+          sender_id: string
+        }
+        Update: {
+          body?: string
+          created_at?: string
+          id?: string
+          read_at?: string | null
+          recipient_id?: string
+          sender_id?: string
+        }
+        Relationships: []
+      }
       gpa_records: {
         Row: {
           course_code: string
@@ -242,6 +269,7 @@ export type Database = {
           level: number | null
           updated_at: string
           user_id: string
+          username: string | null
         }
         Insert: {
           created_at?: string
@@ -253,6 +281,7 @@ export type Database = {
           level?: number | null
           updated_at?: string
           user_id: string
+          username?: string | null
         }
         Update: {
           created_at?: string
@@ -264,6 +293,7 @@ export type Database = {
           level?: number | null
           updated_at?: string
           user_id?: string
+          username?: string | null
         }
         Relationships: [
           {
@@ -345,6 +375,21 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      can_access_direct_message: {
+        Args: { _recipient: string; _sender: string }
+        Returns: boolean
+      }
+      get_message_peers: {
+        Args: never
+        Returns: {
+          full_name: string
+          last_message: string
+          last_message_at: string
+          unread_count: number
+          user_id: string
+          username: string
+        }[]
+      }
       get_registered_users: {
         Args: never
         Returns: {
@@ -355,6 +400,22 @@ export type Database = {
           institution: string
           level: number
           user_id: string
+        }[]
+      }
+      is_current_user_admin: { Args: never; Returns: boolean }
+      is_username_available: { Args: { _username: string }; Returns: boolean }
+      mark_direct_messages_read: {
+        Args: { _sender_id: string }
+        Returns: number
+      }
+      search_schoolmates: {
+        Args: { _query: string }
+        Returns: {
+          department_name: string
+          full_name: string
+          level: number
+          user_id: string
+          username: string
         }[]
       }
     }
