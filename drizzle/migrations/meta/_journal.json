@@ -8,6 +8,13 @@
       "when": 1791994797180,
       "tag": "0000_student_messaging_usernames",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1792222536253,
+      "tag": "0001_secure_student_messaging_admin_roles",
+      "breakpoints": true
     }
   ]
 }
