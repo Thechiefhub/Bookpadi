@@ -6,7 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
-import { BookOpen, ChevronRight, Loader2, GraduationCap } from "lucide-react";
+import { BookOpen, Calendar, Calculator, ChevronRight, Loader2, GraduationCap, MessageCircle } from "lucide-react";
 import AppLayout from "@/components/AppLayout";
 
 interface Course {
