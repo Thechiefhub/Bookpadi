@@ -6,7 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
-import { BookOpen, ChevronRight, Loader2, GraduationCap } from "lucide-react";
+import { BookOpen, Calendar, Calculator, ChevronRight, Loader2, GraduationCap, MessageCircle } from "lucide-react";
 import AppLayout from "@/components/AppLayout";
 
 interface Course {
@@ -86,6 +86,26 @@ export default function Dashboard() {
             </div>
           </div>
         </div>
+
+        {/* Quick actions */}
+        <div className="flex flex-wrap gap-2">
+          <Link to="/messages">
+            <Button variant="secondary" size="sm" className="gap-1.5 h-9">
+              <MessageCircle className="w-3.5 h-3.5" /> Message schoolmates
+            </Button>
+          </Link>
+          <Link to="/planner">
+            <Button variant="outline" size="sm" className="gap-1.5 h-9">
+              <Calendar className="w-3.5 h-3.5" /> Build timetable
+            </Button>
+          </Link>
+          <Link to="/gpa">
+            <Button variant="outline" size="sm" className="gap-1.5 h-9">
+              <Calculator className="w-3.5 h-3.5" /> Track GPA
+            </Button>
+          </Link>
+        </div>
+
 
         {/* Courses */}
         <Tabs defaultValue="1" className="space-y-4">

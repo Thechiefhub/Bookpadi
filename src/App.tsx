@@ -30,6 +30,7 @@ import Flashcards from "./pages/Flashcards";
 import EssayReviewer from "./pages/EssayReviewer";
 import WeakAreaAnalysis from "./pages/WeakAreaAnalysis";
 import VoiceNotes from "./pages/VoiceNotes";
+import Messages from "./pages/Messages";
 import NotFound from "./pages/NotFound";
 import { Loader2 } from "lucide-react";
 
@@ -120,6 +121,7 @@ function AppRoutes() {
       <Route path="/saved" element={<ProtectedRoute><SavedPlans /></ProtectedRoute>} />
       <Route path="/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
       <Route path="/research" element={<ProtectedRoute><Research /></ProtectedRoute>} />
+      <Route path="/messages" element={<ProtectedRoute><Messages /></ProtectedRoute>} />
       <Route path="/gpa" element={<ProtectedRoute><GpaCalculator /></ProtectedRoute>} />
       <Route path="/assignments" element={<ProtectedRoute><Assignments /></ProtectedRoute>} />
       <Route path="/progress" element={<ProtectedRoute><SemesterProgress /></ProtectedRoute>} />
