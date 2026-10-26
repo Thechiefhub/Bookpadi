@@ -283,7 +283,7 @@ export default function Messages() {
           placeholder="Write a message…"
           className="flex-1"
         />
-        <Button type="submit" size="icon" className="gradient-primary shrink-0 h-10 w-10" disabled={sending || !draft.trim()}>
+        <Button type="submit" size="icon" aria-label="Send message" className="gradient-primary shrink-0 h-10 w-10" disabled={sending || !draft.trim()}>
           <Send className="w-4 h-4" />
         </Button>
       </form>
