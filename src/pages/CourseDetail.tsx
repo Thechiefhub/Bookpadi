@@ -5,7 +5,7 @@ import { useAuth } from "@/hooks/useAuth";
 import AppLayout from "@/components/AppLayout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
+import { Progress } from "@/components/ui/progress";
 import {
   Dialog,
   DialogContent,
@@ -13,9 +13,24 @@ import {
   DialogTitle,
   DialogDescription,
 } from "@/components/ui/dialog";
-import { Loader2, ArrowLeft, Pin, PinOff, BookOpen, ExternalLink, Youtube, Sparkles, FileText, ChevronsDownUp, ChevronsUpDown } from "lucide-react";
+import {
+  Loader2,
+  ArrowLeft,
+  Pin,
+  PinOff,
+  BookOpen,
+  ExternalLink,
+  Youtube,
+  Sparkles,
+  FileText,
+  ChevronsDownUp,
+  ChevronsUpDown,
+  CheckCircle2,
+  Circle,
+} from "lucide-react";
 import { toast } from "sonner";
 import ReactMarkdown from "react-markdown";
+import { useStudentEngagement } from "@/lib/studentEngagement";
 
 interface Course {
   id: string;
@@ -47,6 +62,14 @@ export default function CourseDetail() {
   const [loading, setLoading] = useState(true);
   const [allExpanded, setAllExpanded] = useState(true);
 
+  const {
+    completedTopicIds,
+    completedCourseIds,
+    toggleTopicComplete,
+    syncCourseModuleCompletion,
+    markCourseModuleComplete,
+  } = useStudentEngagement(user?.id);
+
   // AI Explain state
   const [explainOpen, setExplainOpen] = useState(false);
   const [explainTopic, setExplainTopic] = useState<Topic | null>(null);
@@ -55,7 +78,7 @@ export default function CourseDetail() {
 
   useEffect(() => {
     if (!id) return;
-    const fetch = async () => {
+    const fetchCourse = async () => {
       const [courseRes, topicsRes, pinsRes] = await Promise.all([
         supabase.from("courses").select("*").eq("id", id).single(),
         supabase.from("topics").select("*").eq("course_id", id).order("sort_order"),
@@ -68,10 +91,21 @@ export default function CourseDetail() {
       if (pinsRes.data) setPins(pinsRes.data as PinRecord[]);
       setLoading(false);
     };
-    fetch();
+    fetchCourse();
   }, [id, user]);
 
+  useEffect(() => {
+    if (course && topics.length > 0) {
+      syncCourseModuleCompletion(
+        course.id,
+        topics.map((t) => t.id),
+        course.course_code
+      );
+    }
+  }, [course, topics, completedTopicIds, syncCourseModuleCompletion]);
+
   const isPinned = (topicId: string) => pins.some((p) => p.topic_id === topicId);
+  const isTopicCompleted = (topicId: string) => completedTopicIds.includes(topicId);
 
   const togglePin = async (topicId: string) => {
     if (!user) return;
@@ -93,77 +127,80 @@ export default function CourseDetail() {
     }
   };
 
-  const handleExplain = useCallback(async (topic: Topic) => {
-    setExplainTopic(topic);
-    setExplainText("");
-    setExplainOpen(true);
-    setExplainLoading(true);
+  const handleExplain = useCallback(
+    async (topic: Topic) => {
+      setExplainTopic(topic);
+      setExplainText("");
+      setExplainOpen(true);
+      setExplainLoading(true);
 
-    try {
-      const resp = await fetch(
-        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/explain-topic`,
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
-          },
-          body: JSON.stringify({
-            topicTitle: topic.title,
-            topicContent: topic.content,
-            courseTitle: course?.title || "",
-          }),
+      try {
+        const resp = await fetch(
+          `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/explain-topic`,
+          {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
+            },
+            body: JSON.stringify({
+              topicTitle: topic.title,
+              topicContent: topic.content,
+              courseTitle: course?.title || "",
+            }),
+          }
+        );
+
+        if (!resp.ok) {
+          const err = await resp.json().catch(() => ({ error: "AI service error" }));
+          toast.error(err.error || "Failed to get explanation");
+          setExplainLoading(false);
+          return;
         }
-      );
 
-      if (!resp.ok) {
-        const err = await resp.json().catch(() => ({ error: "AI service error" }));
-        toast.error(err.error || "Failed to get explanation");
-        setExplainLoading(false);
-        return;
-      }
+        if (!resp.body) throw new Error("No response body");
 
-      if (!resp.body) throw new Error("No response body");
+        const reader = resp.body.getReader();
+        const decoder = new TextDecoder();
+        let buffer = "";
+        let accumulated = "";
 
-      const reader = resp.body.getReader();
-      const decoder = new TextDecoder();
-      let buffer = "";
-      let accumulated = "";
+        while (true) {
+          const { done, value } = await reader.read();
+          if (done) break;
+          buffer += decoder.decode(value, { stream: true });
 
-      while (true) {
-        const { done, value } = await reader.read();
-        if (done) break;
-        buffer += decoder.decode(value, { stream: true });
-
-        let newlineIndex: number;
-        while ((newlineIndex = buffer.indexOf("\n")) !== -1) {
-          let line = buffer.slice(0, newlineIndex);
-          buffer = buffer.slice(newlineIndex + 1);
-          if (line.endsWith("\r")) line = line.slice(0, -1);
-          if (line.startsWith(":") || line.trim() === "") continue;
-          if (!line.startsWith("data: ")) continue;
-          const jsonStr = line.slice(6).trim();
-          if (jsonStr === "[DONE]") break;
-          try {
-            const parsed = JSON.parse(jsonStr);
-            const content = parsed.choices?.[0]?.delta?.content;
-            if (content) {
-              accumulated += content;
-              setExplainText(accumulated);
+          let newlineIndex: number;
+          while ((newlineIndex = buffer.indexOf("\n")) !== -1) {
+            let line = buffer.slice(0, newlineIndex);
+            buffer = buffer.slice(newlineIndex + 1);
+            if (line.endsWith("\r")) line = line.slice(0, -1);
+            if (line.startsWith(":") || line.trim() === "") continue;
+            if (!line.startsWith("data: ")) continue;
+            const jsonStr = line.slice(6).trim();
+            if (jsonStr === "[DONE]") break;
+            try {
+              const parsed = JSON.parse(jsonStr);
+              const content = parsed.choices?.[0]?.delta?.content;
+              if (content) {
+                accumulated += content;
+                setExplainText(accumulated);
+              }
+            } catch {
+              buffer = line + "\n" + buffer;
+              break;
             }
-          } catch {
-            buffer = line + "\n" + buffer;
-            break;
           }
         }
+      } catch (e) {
+        console.error("Explain error:", e);
+        toast.error("Failed to get AI explanation");
+      } finally {
+        setExplainLoading(false);
       }
-    } catch (e) {
-      console.error("Explain error:", e);
-      toast.error("Failed to get AI explanation");
-    } finally {
-      setExplainLoading(false);
-    }
-  }, [course]);
+    },
+    [course]
+  );
 
   if (loading) {
     return (
@@ -183,22 +220,38 @@ export default function CourseDetail() {
     );
   }
 
+  const completedInCourse = topics.filter((t) => completedTopicIds.includes(t.id)).length;
+  const moduleProgressPct =
+    topics.length > 0
+      ? Math.round((completedInCourse / topics.length) * 100)
+      : completedCourseIds.includes(course.id)
+      ? 100
+      : 0;
+  const isModuleDone = completedCourseIds.includes(course.id) || (topics.length > 0 && completedInCourse === topics.length);
+
   return (
     <AppLayout>
       <div className="space-y-6 max-w-3xl mx-auto">
-        <Link to="/dashboard" className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-primary transition-colors">
+        <Link
+          to="/dashboard"
+          className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-primary transition-colors"
+        >
           <ArrowLeft className="w-4 h-4" /> Back to courses
         </Link>
 
         <div className="flex items-start justify-between flex-wrap gap-3">
           <div>
-            <Badge variant="secondary" className="font-mono mb-2">{course.course_code}</Badge>
+            <div className="flex items-center gap-2 text-xs text-muted-foreground font-mono mb-1.5">
+              <span className="font-semibold text-foreground">{course.course_code}</span>
+              <span aria-hidden="true">·</span>
+              <span className="tabular-nums">{course.units} units</span>
+            </div>
             <h1 className="text-2xl md:text-3xl font-bold">{course.title}</h1>
             {course.description && (
               <p className="mt-2 text-muted-foreground leading-relaxed">{course.description}</p>
             )}
           </div>
-          <div className="flex gap-2">
+          <div className="flex flex-wrap gap-2">
             <Link to={`/course/${id}/guide`}>
               <Button variant="outline" size="sm" className="gap-1.5">
                 <FileText className="w-4 h-4" /> Study Guide
@@ -212,9 +265,41 @@ export default function CourseDetail() {
           </div>
         </div>
 
+        {/* Module Completion Progress Bar */}
+        <Card className="border-border">
+          <CardContent className="p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            <div className="space-y-1.5 flex-1">
+              <div className="flex items-center justify-between text-xs">
+                <span className="font-semibold text-foreground">Module Completion Progress</span>
+                <span className="font-mono tabular-nums text-muted-foreground">
+                  {topics.length > 0
+                    ? `${completedInCourse} / ${topics.length} topics (${moduleProgressPct}%)`
+                    : `${moduleProgressPct}%`}
+                </span>
+              </div>
+              <Progress value={moduleProgressPct} className="h-2" />
+            </div>
+            <Button
+              size="sm"
+              variant={isModuleDone ? "outline" : "default"}
+              onClick={() =>
+                markCourseModuleComplete(
+                  course.id,
+                  topics.map((t) => t.id),
+                  course.course_code
+                )
+              }
+              className="gap-1.5 whitespace-nowrap shrink-0 h-9"
+            >
+              <CheckCircle2 className="w-4 h-4" />
+              {isModuleDone ? "Module Completed" : "Finish Course Module"}
+            </Button>
+          </CardContent>
+        </Card>
+
         <div className="space-y-3">
           <div className="flex items-center justify-between">
-            <h2 className="text-lg font-semibold">Topics ({topics.length})</h2>
+            <h2 className="text-lg font-semibold tabular-nums">Topics ({topics.length})</h2>
             {topics.length > 0 && (
               <Button
                 variant="ghost"
@@ -244,20 +329,38 @@ export default function CourseDetail() {
           ) : (
             topics.map((topic, idx) => {
               const links = Array.isArray(topic.external_links) ? topic.external_links : [];
+              const completed = isTopicCompleted(topic.id);
               return (
                 <Card key={topic.id} className="overflow-hidden">
                   <CardHeader>
                     <div className="flex items-start justify-between gap-2">
                       <div className="flex items-start gap-3">
-                        <span className="text-sm font-mono text-muted-foreground mt-0.5 shrink-0">
-                          {String(idx + 1).padStart(2, "0")}
+                        <button
+                          type="button"
+                          onClick={() => toggleTopicComplete(topic.id, course.id, topics.length)}
+                          className="mt-0.5 text-muted-foreground hover:text-primary transition-colors shrink-0"
+                          title={completed ? "Mark topic incomplete" : "Mark topic complete"}
+                        >
+                          {completed ? (
+                            <CheckCircle2 className="w-5 h-5 text-primary" />
+                          ) : (
+                            <Circle className="w-5 h-5" />
+                          )}
+                        </button>
+                        <span className="text-sm font-mono tabular-nums text-muted-foreground mt-0.5 shrink-0">
+                          {String(idx + 1).padStart(2, "0")}.
                         </span>
                         <div className="flex items-center gap-2">
-                          <CardTitle className="text-base">{topic.title}</CardTitle>
+                          <CardTitle
+                            className={`text-base ${
+                              completed ? "line-through text-muted-foreground" : ""
+                            }`}
+                          >
+                            {topic.title}
+                          </CardTitle>
                           {links.length > 0 && (
-                            <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full bg-primary/10 text-primary text-[10px] font-medium shrink-0">
-                              <ExternalLink className="w-3 h-3" />
-                              {links.length}
+                            <span className="text-xs text-muted-foreground tabular-nums">
+                              · {links.length} {links.length === 1 ? "resource" : "resources"}
                             </span>
                           )}
                         </div>
@@ -275,6 +378,7 @@ export default function CourseDetail() {
                           variant="ghost"
                           size="icon"
                           onClick={() => togglePin(topic.id)}
+                          title={isPinned(topic.id) ? "Unpin topic" : "Pin topic"}
                         >
                           {isPinned(topic.id) ? (
                             <PinOff className="w-4 h-4 text-primary" />
@@ -288,9 +392,13 @@ export default function CourseDetail() {
                   {allExpanded && (
                     <CardContent className="border-t bg-muted/30">
                       {topic.content ? (
-                        <p className="text-sm leading-relaxed whitespace-pre-wrap">{topic.content}</p>
+                        <p className="text-sm leading-relaxed whitespace-pre-wrap">
+                          {topic.content}
+                        </p>
                       ) : (
-                        <p className="text-sm text-muted-foreground italic">No content available for this topic.</p>
+                        <p className="text-sm text-muted-foreground italic">
+                          No content available for this topic.
+                        </p>
                       )}
                       {links.length > 0 && (
                         <div className="mt-4 space-y-2">
@@ -330,9 +438,7 @@ export default function CourseDetail() {
               <Sparkles className="w-5 h-5 text-amber-500" />
               AI Explanation
             </DialogTitle>
-            <DialogDescription>
-              {explainTopic?.title}
-            </DialogDescription>
+            <DialogDescription>{explainTopic?.title}</DialogDescription>
           </DialogHeader>
           <div className="prose prose-sm dark:prose-invert max-w-none">
             {explainLoading && !explainText && (
