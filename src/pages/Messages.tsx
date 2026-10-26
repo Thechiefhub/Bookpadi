@@ -225,7 +225,7 @@ export default function Messages() {
                     )}
                   </div>
                   <p className="text-xs text-muted-foreground truncate">
-                    {peer.last_message ?? `@${peer.username} · ${peer.department_name ?? ""}${peer.department_name && peer.level ? " · " : ""}${peer.level ? `${peer.level} Level` : ""}`}
+                    {peer.last_message ?? (peer.username ? `@${peer.username}` : "No username yet")}
                   </p>
                 </div>
                 {(peer.unread_count ?? 0) > 0 && (
