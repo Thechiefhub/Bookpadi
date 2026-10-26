@@ -83,9 +83,28 @@ export default function Dashboard() {
                 {profile?.institution && <>{profile.institution} · </>}
                 {department?.name} · {profile?.level} Level
               </p>
-            </div>
           </div>
         </div>
+
+        {/* Quick actions */}
+        <div className="flex flex-wrap gap-2">
+          <Link to="/messages">
+            <Button variant="secondary" size="sm" className="gap-1.5 h-9">
+              <MessageCircle className="w-3.5 h-3.5" /> Message schoolmates
+            </Button>
+          </Link>
+          <Link to="/planner">
+            <Button variant="outline" size="sm" className="gap-1.5 h-9">
+              <Calendar className="w-3.5 h-3.5" /> Build timetable
+            </Button>
+          </Link>
+          <Link to="/gpa">
+            <Button variant="outline" size="sm" className="gap-1.5 h-9">
+              <Calculator className="w-3.5 h-3.5" /> Track GPA
+            </Button>
+          </Link>
+        </div>
+
 
         {/* Courses */}
         <Tabs defaultValue="1" className="space-y-4">
