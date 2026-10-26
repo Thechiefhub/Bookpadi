@@ -30,6 +30,7 @@ import Flashcards from "./pages/Flashcards";
 import EssayReviewer from "./pages/EssayReviewer";
 import WeakAreaAnalysis from "./pages/WeakAreaAnalysis";
 import VoiceNotes from "./pages/VoiceNotes";
+import Messages from "./pages/Messages";
 import NotFound from "./pages/NotFound";
 import { Loader2 } from "lucide-react";
 
