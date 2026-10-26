@@ -83,6 +83,7 @@ export default function Dashboard() {
                 {profile?.institution && <>{profile.institution} · </>}
                 {department?.name} · {profile?.level} Level
               </p>
+            </div>
           </div>
         </div>
 
