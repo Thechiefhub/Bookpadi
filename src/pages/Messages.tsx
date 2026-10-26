@@ -252,7 +252,7 @@ export default function Messages() {
         </Avatar>
         <div className="min-w-0">
           <p className="font-semibold text-sm truncate">{active.full_name}</p>
-          <p className="text-xs text-muted-foreground truncate">@{active.username}</p>
+          <p className="text-xs text-muted-foreground truncate">{active.username ? `@${active.username}` : ""}</p>
         </div>
       </div>
       <div ref={scrollRef} className="flex-1 overflow-y-auto p-4 space-y-2">
