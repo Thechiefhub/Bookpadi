@@ -23,6 +23,7 @@ Rules:
 - Include short breaks between sessions
 - Spread each course across multiple days for better retention
 - Respect the student's preferred study window and days off
+- Write ALL mathematics and calculations in plain readable text (e.g. "2 hours", "3 x 1 hour sessions"). NEVER use LaTeX, TeX notation or special math markup.
 - Return ONLY valid JSON, no markdown or extra text
 
 Return format:
